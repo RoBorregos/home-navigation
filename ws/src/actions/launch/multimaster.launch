@@ -19,5 +19,11 @@
     </node>
 
     <!-- Start the master_discovery node -->
-    <node pkg="fkie_master_discovery" type="master_discovery" name="master_discovery"/>
+    <node pkg="fkie_master_discovery" type="master_discovery" name="master_discovery">
+        <rosparam>
+            robot_hosts:
+                - 'rbrgs'
+                - 'nano'
+        </rosparam>
+    </node>
 </launch>
