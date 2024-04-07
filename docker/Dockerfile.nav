@@ -1,5 +1,5 @@
 FROM althack/ros:noetic-full
-# LABEL maintainer="Emiliano Flores <A00833160@tec.mx>"
+
 # Install dependencies.
 RUN apt-get update -qq && apt-get install -y  build-essential \
     ffmpeg libsm6 libxext6 autoconf libtool mesa-utils \
@@ -13,7 +13,8 @@ RUN apt install -y ros-noetic-teleop-twist-keyboard \
 
 # Navigation packages
 RUN apt install -y ros-noetic-serial ros-noetic-gmapping \
-    ros-noetic-robot-localization ros-noetic-teb-local-planner 
+    ros-noetic-robot-localization ros-noetic-teb-local-planner \
+    ros-noetic-fkie-multimaster
 
 RUN pip install pyserial
 
