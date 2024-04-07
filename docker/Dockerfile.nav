@@ -1,0 +1,23 @@
+FROM althack/ros:noetic-full
+# LABEL maintainer="Emiliano Flores <A00833160@tec.mx>"
+# Install dependencies.
+RUN apt-get update -qq && apt-get install -y  build-essential \
+    ffmpeg libsm6 libxext6 autoconf libtool mesa-utils \
+    terminator nano git wget curl iputils-ping \
+    libcanberra-gtk-module libcanberra-gtk3-module \
+    ros-dev-tools 
+    
+# Additional ROS tools
+RUN apt install -y ros-noetic-teleop-twist-keyboard \
+    ros-noetic-navigation
+
+# Navigation packages
+RUN apt install -y ros-noetic-serial ros-noetic-gmapping \
+    ros-noetic-robot-localization ros-noetic-teb-local-planner 
+
+RUN pip install pyserial
+
+RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
+RUN mkdir /workspace
+
+ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
