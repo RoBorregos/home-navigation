@@ -1,0 +1,5 @@
+**/install
+**/devel
+**/build
+*.user
+.vscode/
