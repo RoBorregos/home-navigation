@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(nav_main)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -8,6 +8,7 @@ project(nav_main)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  ira_laser_tools
   roscpp
   rospy
   std_msgs
@@ -105,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nav_main
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  CATKIN_DEPENDS ira_laser_tools roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
