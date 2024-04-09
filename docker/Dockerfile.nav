@@ -9,7 +9,7 @@ RUN apt-get update -qq && apt-get install -y  build-essential \
     
 # Additional ROS tools
 RUN apt install -y ros-noetic-teleop-twist-keyboard \
-    ros-noetic-navigation
+    ros-noetic-navigation ros-noetic-ira-laser-tools
 
 # Navigation packages
 RUN apt install -y ros-noetic-serial ros-noetic-gmapping \
