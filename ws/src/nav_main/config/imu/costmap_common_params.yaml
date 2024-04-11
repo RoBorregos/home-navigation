@@ -36,7 +36,7 @@ obstacle_layer:
     marking: true  # Enables marking of costmap cells as obstacles based on laser scan sensor observations.
     clearing: true  # Enables clearing of costmap cells
     expected_update_rate: 0  # Expected update rate of the laser scan sensor.
-    min_obstacle_height: 0.21  # Minimum height of obstacles detected by the laser scan sensor.
+    min_obstacle_height: 0.1  # Minimum height of obstacles detected by the laser scan sensor.
     max_obstacle_height: 0.30  # Maximum height of obstacles detected by the laser scan sensor.
   
   laser_scan_zed:
