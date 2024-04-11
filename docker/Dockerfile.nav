@@ -9,12 +9,12 @@ RUN apt-get update -qq && apt-get install -y  build-essential \
     
 # Additional ROS tools
 RUN apt install -y ros-noetic-teleop-twist-keyboard \
-    ros-noetic-navigation ros-noetic-ira-laser-tools
+    ros-noetic-navigation
 
 # Navigation packages
 RUN apt install -y ros-noetic-serial ros-noetic-gmapping \
     ros-noetic-robot-localization ros-noetic-teb-local-planner \
-    ros-noetic-fkie-multimaster
+    ros-noetic-fkie-multimaster ros-noetic-ira-laser-tools
 
 RUN pip install pyserial
 

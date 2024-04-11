@@ -4,7 +4,6 @@ import tf2_ros
 
 from geometry_msgs.msg import PointStamped
 from tf2_geometry_msgs import PoseStamped
-from std_msgs.msg import Bool
 from actionlib_msgs.msg import GoalStatusArray
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import OccupancyGrid
@@ -51,9 +50,9 @@ class HumanPositionGetter:
         self.pose_subscriber = rospy.Subscriber(
             "/person_pose_odom", PointStamped, self.pose_callback
         )
-        self.follow_person_subscriber = rospy.Subscriber(
-            "/follow_person", Bool, self.follow_person_callback
-        )
+        # self.follow_person_subscriber = rospy.Subscriber(
+        #     "/follow_person", Bool, self.follow_person_callback
+        # )
         self.odom_subscriber = rospy.Subscriber(
             # Robot_pose when running AMCL and run slam_out_pose when running Hector_Slam
             "/slam_out_pose",
@@ -165,10 +164,10 @@ class HumanPositionGetter:
 
         return [qx, qy, qz, qw]
 
-    def follow_person_callback(self, follow_person: Bool):
-        print("follow person")
-        print(f"Received: {follow_person}")
-        self.follow_person = follow_person.data
+    # def follow_person_callback(self, follow_person: Bool):
+    #     print("follow person")
+    #     print(f"Received: {follow_person}")
+    #     self.follow_person = follow_person.data
 
     def odom_callback(self, robot_pose: PoseStamped):
         robot_pose = robot_pose.pose
