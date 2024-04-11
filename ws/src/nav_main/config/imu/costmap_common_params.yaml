@@ -1,4 +1,5 @@
-footprint: [[-0.185, -0.20], [-0.185, 0.2],[0.215, 0.2], [0.215, -0.2]]  # Defines the footprint of the robot.
+robot_radius: 0.21  # Defines the radius of the robot.
+#footprint: [[-0.185, -0.20], [-0.185, 0.2],[0.215, 0.2], [0.215, -0.2]]  # Defines the footprint of the robot.
 
 obstacle_layer:
   enabled: true  # Enables the obstacle layer.
@@ -8,7 +9,7 @@ obstacle_layer:
   raytrace_range: 3.5  # Maximum range for raytracing to clear out space.
   inflation_radius: 0.20  # Maximum distance from an obstacle at which costs are incurred for planning paths.
   combination_method: 1  # Method used to combine costmap layers.
-  observation_sources:  laser_scan_zed laser_scan_sensor # camera_depth  #  Sources of observations for the obstacle layer.
+  observation_sources:  laser_scan_zed laser_scan_sensor #laser_scan_merged # camera_depth  #  Sources of observations for the obstacle layer.
   track_unknown_space: true  # Determines whether to track unknown space in the costmap.
 
   origin_z: 0.0  # Origin height of the obstacle layer.
@@ -17,7 +18,7 @@ obstacle_layer:
   unknown_threshold: 15  # Threshold value for considering a cell as unknown.
   mark_threshold: 0  # Threshold value for marking a cell as an obstacle.
   publish_voxel_map: true  # Determines whether to publish the voxel map.
-  footprint_clearing_enabled: true  # Enables footprint clearing.
+  #footprint_clearing_enabled: true  # Enables footprint clearing.
 
 
   sonar_scan_sensor:
@@ -41,6 +42,15 @@ obstacle_layer:
   laser_scan_zed:
     data_type: LaserScan
     topic: /pc2ls/scan
+    marking: true  # Enables marking of costmap cells as obstacles based on laser scan sensor observations.
+    clearing: true  # Enables clearing of costmap cells
+    expected_update_rate: 0  # Expected update rate of the laser scan sensor.
+    min_obstacle_height: 0 # 0.21  # Minimum height of obstacles detected by the laser scan sensor.
+    max_obstacle_height: 2 # 0.30  # Maximum height of obstacles detected by the laser scan sensor.
+
+  laser_scan_merged:
+    data_type: LaserScan
+    topic: /scan_merged
     marking: true  # Enables marking of costmap cells as obstacles based on laser scan sensor observations.
     clearing: true  # Enables clearing of costmap cells
     expected_update_rate: 0  # Expected update rate of the laser scan sensor.
