@@ -14,7 +14,7 @@ RUN apt install -y ros-noetic-teleop-twist-keyboard \
 # Navigation packages
 RUN apt install -y ros-noetic-serial ros-noetic-gmapping \
     ros-noetic-robot-localization ros-noetic-teb-local-planner \
-    ros-noetic-fkie-multimaster
+    ros-noetic-fkie-multimaster ros-noetic-pointcloud-to-laserscan
 
 RUN pip install pyserial
 
