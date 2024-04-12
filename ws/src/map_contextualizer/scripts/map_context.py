@@ -12,9 +12,10 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from geometry_msgs.msg import Point, Pose
 from nav_msgs.msg import Odometry
+import pathlib
 
 from math import sin
-
+BASE_PATH = str(pathlib.Path(__file__).parent) + "/areas.json"
 
 server = None
 odom_pose = None
@@ -184,8 +185,8 @@ def poseFeedback( feedback ):
     context = context.split('-')
     last_key1 = context[0]
     last_key2 = context[1]
-    rospy.loginfo("Insert ROI => ROI Room: " + context[0] + " ROI Place" + context[1] + "\nPOSE: x = {} y = {} z = {}\nORIENTATION: x = {} y = {} z = {} w = {}".format(feedback.pose.position.x, feedback.pose.position.y, feedback.pose.position.z - marker_z, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w))   
-    savePose(context[0], context[1] , feedback.pose.position.x, feedback.pose.position.y, feedback.pose.position.z - marker_z, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w)
+    rospy.loginfo("Insert ROI => ROI Room: " + context[0] + " ROI Place" + context[1] + "\nPOSE: x = {} y = {} z = {}\nORIENTATION: x = {} y = {} z = {} w = {}".format(feedback.pose.position.x, feedback.pose.position.y, feedback.pose.position.z, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w))   
+    savePose(context[0], context[1] , feedback.pose.position.x, feedback.pose.position.y, 0, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w)
 
 def initDict(config_file):
     global roi_dict
@@ -197,8 +198,8 @@ def initDict(config_file):
 
 def save_points(save):
     # Abre el archivo JSON y escribe el diccionario nuevo en él 
-    file = "/home/jetson/robocup-home/catkin_home/src/navigation/map_contextualizer/scripts/areas.json"
-    with open(file, "w") as outfile:
+    #file = "/home/jetson/robocup-home/catkin_home/src/navigation/map_contextualizer/scripts/areas.json"
+    with open(BASE_PATH, "w") as outfile:
         json.dump(roi_dict, outfile, indent=4)
 
     rospy.loginfo("Guardado")
@@ -226,7 +227,7 @@ if __name__=="__main__":
 
       
 
-      initDict("/home/jetson/robocup-home/catkin_home/src/navigation/map_contextualizer/scripts/areas.json")
+      initDict(BASE_PATH)
       initMenu()
 
       rospy.loginfo("inicializado")

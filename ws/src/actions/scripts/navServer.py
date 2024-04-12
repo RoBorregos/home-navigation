@@ -17,16 +17,7 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actions.msg
 from actions.msg import navServAction, navServGoal, navServResult
 
-BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer"
-
-placesPoses = {
- "BATHROOM": Pose(Point(x=-0.3963, y=3.802, z=0.0), Quaternion(x=0.0, y=0.0, z=0.4664, w=0.8845)),
- "CLOSET": Pose(Point(x=-1.9308, y=2.7578, z=0.0), Quaternion(x=0.0, y=0.0, z=-0.6844, w=0.729)),
- "COUCH": Pose(Point(x=0.0496, y=0.1873, z=0.0), Quaternion(x=0.0, y=0.0, z=0.0299, w=0.999)),
- "KITCHEN": Pose(Point(x=-1.256, y=1.5809, z=0.0), Quaternion(x=0.0, y=0.0, z=-0.9992, w=0.0392)),
- "HOME": Pose(Point(x=-4.344, y=0.579, z=0.0), Quaternion(x=0.0, y=0.0, z=0.679, w=0.733)),
-}
-
+BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
 
 class navigationServer(object):
 
@@ -40,13 +31,6 @@ class navigationServer(object):
         rospy.loginfo("MoveBase AS Loaded ...")
 
         self.initPlaces()
-
-        # Localization
-        #rospy.loginfo("Global Localization")
-        #rospy.wait_for_service('/global_localization')
-        #global_localization = rospy.ServiceProxy('/global_localization', Empty)
-        #global_localization()
-        #self.rotate()
 
         # Initialize Navigation Action Server
         self._as = actionlib.SimpleActionServer(self._action_name, actions.msg.navServAction, execute_cb=self.execute_cb, auto_start = False)
@@ -74,8 +58,6 @@ class navigationServer(object):
                                                             y=data[key][subkey][4], 
                                                             z=data[key][subkey][5], 
                                                             w=data[key][subkey][6]))
-                    
-                    rospy.loginfo(f"Loaded {key} {subkey} at {data[key][subkey]}")
 
     
     def execute_cb(self, goal):
@@ -86,12 +68,17 @@ class navigationServer(object):
 
         keys = target.split(" ")
 
-        print(keys)
-    
-        if (len(keys) <= 1):
+        if (len(keys) <= 1 and keys[0] in self.placesPoses):
+            rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]]['safe_place']}")
             self.send_goal(self.placesPoses[keys[0]]['safe_place'])
-        else:
+        elif (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
+            rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]][keys[1]]}")
             self.send_goal(self.placesPoses[keys[0]][keys[1]])
+        else :
+            rospy.loginfo("Invalid target")
+            self._as.set_succeeded(navServResult(result=False))
+            return
+            
 
         rospy.loginfo("Robot Moving Towards " + target)
         self._as.set_succeeded(navServResult(result=True))

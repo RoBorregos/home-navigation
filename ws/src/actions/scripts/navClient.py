@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped
 from enum import Enum
 import pathlib
 
-BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer"
+BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
 
 def handleIntInput(msg_ = "", range=(0, 10)):
     x = -1
@@ -43,7 +43,7 @@ class NavClient(object):
             data = json.load(json_file)
             for key in data:
                 for subkey in data[key]:
-                    msg += f"{count}. {subkey}\n"
+                    msg += f"{count}. {key} {subkey}\n"
                     self.MoveGoals[count] = key + " " + subkey
                     count += 1
         
@@ -85,6 +85,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('NavGoalClient', anonymous=True)
         rospy.loginfo("NavGoalClient initialized.")
+        rospy.loginfo(BASE_PATH)
         NavClient()
 
     except rospy.ROSInterruptException:
