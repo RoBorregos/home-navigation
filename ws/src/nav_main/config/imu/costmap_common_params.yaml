@@ -1,4 +1,4 @@
-robot_radius: 0.21  # Defines the radius of the robot.
+robot_radius: 0.1  # Defines the radius of the robot.
 #footprint: [[-0.185, -0.20], [-0.185, 0.2],[0.215, 0.2], [0.215, -0.2]]  # Defines the footprint of the robot.
 
 obstacle_layer:
