@@ -43,7 +43,7 @@ class HumanPositionPublisher:
         self.follow_person = False
         self.change_follow_state = rospy.Service("/change_follow_person_state", SetBool, self.change_follow_person_state)
         self.change_person_tracker_state = rospy.ServiceProxy("/change_person_tracker_state", SetBool)
-        self.person_tracker_subscriber = rospy.Subscriber("/person_detection", Point, self.change_follow_person_state)
+        self.person_tracker_subscriber = rospy.Subscriber("/person_detection", Point, self.person_tracker_callback)
 
         self.cv_image = None
         self.camera_info = None
@@ -86,7 +86,7 @@ class HumanPositionPublisher:
         self.change_person_tracker_state(req.data)
 
         self.follow_person = req.data
-        return SetBool.Response(success=True, message="Success")
+        return True, "Success"
 
     def depth_image_callback(self, data):
         try:
@@ -116,13 +116,13 @@ class HumanPositionPublisher:
             point3D_ = self.deproject_pixel_to_point(
                 self.camera_info, point2D, depth
             )
-            point3D.x = point3D_[2]
-            point3D.y = point3D_[0]
-            point3D.z = point3D_[1]
+            point3D.x = point3D_[0]
+            point3D.y = point3D_[1]
+            point3D.z = point3D_[2]
             point_x = PointStamped()
             point_x.header.frame_id = "base_footprint"
             point_x.point.x = point3D.x
-            point_x.point.y = -point3D.y
+            point_x.point.y = point3D.y
             point_x.point.z = 0
 
             print(point_x)
