@@ -9,13 +9,15 @@ This node runs on the jetson xavier.
 
 import sys
 import math
+from math import fabs
 import numpy as np
 from cv_bridge import CvBridge, CvBridgeError
 
 import rospy
 import tf2_ros
 from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Point, PointStamped
+from tf2_geometry_msgs import PointStamped
+from geometry_msgs.msg import Point
 from std_srvs.srv import SetBool
 
 FLT_EPSILON = sys.float_info.epsilon
@@ -50,6 +52,8 @@ class HumanPositionPublisher:
         rospy.loginfo("Subscribed to image")
 
         self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
         self.x, self.y = 0, 0
 
     def get_quaternion_from_euler(self, roll, pitch, yaw):
@@ -105,6 +109,7 @@ class HumanPositionPublisher:
 
     def person_tracker_callback(self, detection: Point):
         if not self.follow_person or self.cv_image is None or self.camera_info is None:
+            print(f'Follow person: {self.follow_person}, cv_image: {self.cv_image is None}, camera_info: {self.camera_info is None}')
             return
         
         self.x, self.y = int(detection.x), int(detection.y)
@@ -119,110 +124,86 @@ class HumanPositionPublisher:
             point3D.x = point3D_[0]
             point3D.y = point3D_[1]
             point3D.z = point3D_[2]
+
             point_x = PointStamped()
-            point_x.header.frame_id = "base_footprint"
+            point_x.header.frame_id = "zed2_left_camera_optical_frame"
             point_x.point.x = point3D.x
             point_x.point.y = point3D.y
-            point_x.point.z = 0
+            point_x.point.z = point3D.z
 
             print(point_x)
-            
-            test_point_x = point_x
+
+            try:
+                target_pt = self.tf_buffer.transform(point_x, "base_footprint")
+                print(f"Transformed point: ({target_pt.point.x}, {target_pt.point.y}, {target_pt.point.z})")
+            except tf2_ros.LookupException:
+                print("Transform lookup failed.")
+                
+            test_point_x = target_pt
+            test_point_x.point.z = 0
             test_point_x.point.x -= 0.2
             if test_point_x.point.x < 0.3:
-                return
+                print("Too close to the robot")
+                # return
             self.pose_publisher.publish(test_point_x)
             self.test_pose_publisher.publish(point_x)
 
-    def get_depth(self, depth_image, pixel):
-        """
-        Given pixel coordinates in an image, the actual image and its depth frame, compute the corresponding depth.
-        """
-        depth_array = np.array(depth_image, dtype=np.float32)
-        heightDEPTH, widthDEPTH = (depth_array.shape[0], depth_array.shape[1])
+    def get_depth(self, depthframe_, pixel):
+        '''
+            Given pixel coordinates in an image, the actual image and its depth frame, compute the corresponding depth.
+        '''
+        heightDEPTH, widthDEPTH = (depthframe_.shape[0], depthframe_.shape[1])
 
-        x = int(pixel[0])
-        y = int(pixel[1])
+        x = pixel[0]
+        y = pixel[1]
 
-        def medianCalculation(x, y, width, height, depth_array):
+        def medianCalculation(x, y, width, height, depthframe_):
             medianArray = []
             requiredValidValues = 20
-
-            def spiral(
-                medianArray,
-                depth_array,
-                requiredValidValues,
-                startX,
-                startY,
-                endX,
-                endY,
-                width,
-                height,
-            ):
-                if startX < 0 and startY < 0 and endX > width and endY > height:
+            def spiral(medianArray, depthframe_, requiredValidValues, startX, startY, endX, endY, width, height):
+                if startX <  0 and startY < 0 and endX > width and endY > height:
                     return
                 # Check first and last row of the square spiral.
                 for i in range(startX, endX + 1):
                     if i >= width:
                         break
-                    if startY >= 0 and math.isfinite(depth_array[startY][i]):
-                        medianArray.append(depth_array[startY][i])
-                    if (
-                        startY != endY
-                        and endY < height
-                        and math.isfinite(depth_array[endY][i])
-                    ):
-                        medianArray.append(depth_array[endY][i])
+                    if startY >= 0 and math.isfinite(depthframe_[startY][i]):
+                        medianArray.append(depthframe_[startY][i])
+                    if startY != endY and endY < height and math.isfinite(depthframe_[endY][i]):
+                        medianArray.append(depthframe_[endY][i])
                     if len(medianArray) > requiredValidValues:
                         return
                 # Check first and last column of the square spiral.
                 for i in range(startY + 1, endY):
                     if i >= height:
                         break
-                    if startX >= 0 and math.isfinite(depth_array[i][startX]):
-                        medianArray.append(depth_array[i][startX])
-                    if (
-                        startX != endX
-                        and endX < width
-                        and math.isfinite(depth_array[i][endX])
-                    ):
-                        medianArray.append(depth_array[i][endX])
+                    if startX >= 0 and math.isfinite(depthframe_[i][startX]):
+                        medianArray.append(depthframe_[i][startX])
+                    if startX != endX and endX < width and math.isfinite(depthframe_[i][endX]):
+                        medianArray.append(depthframe_[i][endX])
                     if len(medianArray) > requiredValidValues:
                         return
                 # Go to the next outer square spiral of the depth pixel.
-                spiral(
-                    medianArray,
-                    depth_array,
-                    requiredValidValues,
-                    startX - 1,
-                    startY - 1,
-                    endX + 1,
-                    endY + 1,
-                    width,
-                    height,
-                )
-
+                spiral(medianArray, depthframe_, requiredValidValues, startX - 1, startY - 1, endX + 1, endY + 1, width, height)
+            
             # Check square spirals around the depth pixel till requiredValidValues found.
-            spiral(
-                medianArray, depth_array, requiredValidValues, x, y, x, y, width, height
-            )
+            spiral(medianArray, depthframe_, requiredValidValues, x, y, x, y, width, height)
             if len(medianArray) == 0:
                 return float("NaN")
 
             # Calculate Median
             medianArray.sort()
             return medianArray[len(medianArray) // 2]
-
+        
         # Get the median of the values around the depth pixel to avoid incorrect readings.
-        return medianCalculation(x, y, widthDEPTH, heightDEPTH, depth_array)
+        return medianCalculation(x, y, widthDEPTH, heightDEPTH, depthframe_)
 
     def deproject_pixel_to_point(self, cv_image_rgb_info, pixel, depth):
-        """
-        Given pixel coordinates and depth in an image with no distortion or inverse distortion coefficients,
-        compute the corresponding point in 3D space relative to the same camera
-        Reference: https://github.com/IntelRealSense/librealsense/blob/e9f05c55f88f6876633bd59fd1cb3848da64b699/src/rs.cpp#L3505
-        """
-
+        '''
+            Given pixel coordinates and depth in an image with no distortion or inverse distortion coefficients, 
+            compute the corresponding point in 3D space relative to the same camera
+            Reference: https://github.com/IntelRealSense/librealsense/blob/e9f05c55f88f6876633bd59fd1cb3848da64b699/src/rs.cpp#L3505
+        '''
         def CameraInfoToIntrinsics(cameraInfo):
             intrinsics = {}
             intrinsics["width"] = cameraInfo.width
@@ -231,18 +212,17 @@ class HumanPositionPublisher:
             intrinsics["ppy"] = cameraInfo.K[5]
             intrinsics["fx"] = cameraInfo.K[0]
             intrinsics["fy"] = cameraInfo.K[4]
-            if cameraInfo.distortion_model == "plumb_bob":
+            if cameraInfo.distortion_model == 'plumb_bob':
                 intrinsics["model"] = "RS2_DISTORTION_BROWN_CONRADY"
-            elif cameraInfo.distortion_model == "equidistant":
+            elif cameraInfo.distortion_model == 'equidistant':
                 intrinsics["model"] = "RS2_DISTORTION_KANNALA_BRANDT4"
             intrinsics["coeffs"] = [i for i in cameraInfo.D]
             return intrinsics
-
+        
         # Parse ROS CameraInfo msg to intrinsics dictionary.
         intrinsics = CameraInfoToIntrinsics(cv_image_rgb_info)
 
-        # Cannot deproject from a forward-distorted image
-        if intrinsics["model"] == "RS2_DISTORTION_MODIFIED_BROWN_CONRADY":
+        if(intrinsics["model"] == "RS2_DISTORTION_MODIFIED_BROWN_CONRADY"): # Cannot deproject from a forward-distorted image
             return
 
         x = (pixel[0] - intrinsics["ppx"]) / intrinsics["fx"]
@@ -251,53 +231,27 @@ class HumanPositionPublisher:
         xo = x
         yo = y
 
-        if intrinsics["model"] == "RS2_DISTORTION_INVERSE_BROWN_CONRADY":
-            # need to loop until convergence
+        if (intrinsics["model"] == "RS2_DISTORTION_INVERSE_BROWN_CONRADY"):
+            # need to loop until convergence 
             # 10 iterations determined empirically
             for i in range(10):
                 r2 = float(x * x + y * y)
-                icdist = float(1) / float(
-                    1
-                    + (
-                        (intrinsics["coeffs"][4] * r2 + intrinsics["coeffs"][1]) * r2
-                        + intrinsics["coeffs"][0]
-                    )
-                    * r2
-                )
+                icdist = float(1) / float(1 + ((intrinsics["coeffs"][4] * r2 + intrinsics["coeffs"][1]) * r2 + intrinsics["coeffs"][0]) * r2)
                 xq = float(x / icdist)
                 yq = float(y / icdist)
-                delta_x = float(
-                    2 * intrinsics["coeffs"][2] * xq * yq
-                    + intrinsics["coeffs"][3] * (r2 + 2 * xq * xq)
-                )
-                delta_y = float(
-                    2 * intrinsics["coeffs"][3] * xq * yq
-                    + intrinsics["coeffs"][2] * (r2 + 2 * yq * yq)
-                )
+                delta_x = float(2 * intrinsics["coeffs"][2] * xq * yq + intrinsics["coeffs"][3] * (r2 + 2 * xq * xq))
+                delta_y = float(2 * intrinsics["coeffs"][3] * xq * yq + intrinsics["coeffs"][2] * (r2 + 2 * yq * yq))
                 x = (xo - delta_x) * icdist
                 y = (yo - delta_y) * icdist
 
         if intrinsics["model"] == "RS2_DISTORTION_BROWN_CONRADY":
-            # need to loop until convergence
+            # need to loop until convergence 
             # 10 iterations determined empirically
             for i in range(10):
                 r2 = float(x * x + y * y)
-                icdist = float(1) / float(
-                    1
-                    + (
-                        (intrinsics["coeffs"][4] * r2 + intrinsics["coeffs"][1]) * r2
-                        + intrinsics["coeffs"][0]
-                    )
-                    * r2
-                )
-                delta_x = float(
-                    2 * intrinsics["coeffs"][2] * x * y
-                    + intrinsics["coeffs"][3] * (r2 + 2 * x * x)
-                )
-                delta_y = float(
-                    2 * intrinsics["coeffs"][3] * x * y
-                    + intrinsics["coeffs"][2] * (r2 + 2 * y * y)
-                )
+                icdist = float(1) / float(1 + ((intrinsics["coeffs"][4] * r2 + intrinsics["coeffs"][1]) * r2 + intrinsics["coeffs"][0]) * r2)
+                delta_x = float(2 * intrinsics["coeffs"][2] * x * y + intrinsics["coeffs"][3] * (r2 + 2 * x * x))
+                delta_y = float(2 * intrinsics["coeffs"][3] * x * y + intrinsics["coeffs"][2] * (r2 + 2 * y * y))
                 x = (xo - delta_x) * icdist
                 y = (yo - delta_y) * icdist
 
@@ -309,44 +263,10 @@ class HumanPositionPublisher:
             theta = float(rd)
             theta2 = float(rd * rd)
             for i in range(4):
-                f = float(
-                    theta
-                    * (
-                        1
-                        + theta2
-                        * (
-                            intrinsics["coeffs"][0]
-                            + theta2
-                            * (
-                                intrinsics["coeffs"][1]
-                                + theta2
-                                * (
-                                    intrinsics["coeffs"][2]
-                                    + theta2 * intrinsics["coeffs"][3]
-                                )
-                            )
-                        )
-                    )
-                    - rd
-                )
-                if abs(f) < FLT_EPSILON:
+                f = float(theta * (1 + theta2 * (intrinsics["coeffs"][0] + theta2 * (intrinsics["coeffs"][1] + theta2 * (intrinsics["coeffs"][2] + theta2 * intrinsics["coeffs"][3])))) - rd)
+                if fabs(f) < FLT_EPSILON:
                     break
-                df = float(
-                    1
-                    + theta2
-                    * (
-                        3 * intrinsics["coeffs"][0]
-                        + theta2
-                        * (
-                            5 * intrinsics["coeffs"][1]
-                            + theta2
-                            * (
-                                7 * intrinsics["coeffs"][2]
-                                + 9 * theta2 * intrinsics["coeffs"][3]
-                            )
-                        )
-                    )
-                )
+                df = float(1 + theta2 * (3 * intrinsics["coeffs"][0] + theta2 * (5 * intrinsics["coeffs"][1] + theta2 * (7 * intrinsics["coeffs"][2] + 9 * theta2 * intrinsics["coeffs"][3]))))
                 theta -= f / df
                 theta2 = theta * theta
             r = float(math.tan(theta))
@@ -357,14 +277,12 @@ class HumanPositionPublisher:
             rd = float(math.sqrt(x * x + y * y))
             if rd < FLT_EPSILON:
                 rd = FLT_EPSILON
-            r = (float)(
-                math.tan(intrinsics["coeffs"][0] * rd)
-                / math.atan(2 * math.tan(intrinsics["coeffs"][0] / float(2.0)))
-            )
+            r = (float)(math.tan(intrinsics["coeffs"][0] * rd) / math.atan(2 * math.tan(intrinsics["coeffs"][0] / float(2.0))))
             x *= r / rd
             y *= r / rd
 
         return (depth * x, depth * y, depth)
+
 
 
 if __name__ == "__main__":
