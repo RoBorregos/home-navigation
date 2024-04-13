@@ -1,6 +1,8 @@
 <launch>
 	<include file="$(find dashgo_driver)/launch/driver_imu.launch"/>
 	<include file="$(find ydlidar)/launch/ydlidar1_up.launch"/>
+    <include file="$(find nav_main)/launch/pc2ls.launch"/>
+	<!-- <include file="$(find nav_main)/launch/scan_merger.launch"/> -->
 	<!-- <include file="$(find dashgo_description)/launch/dashgo_description.launch"/> -->
 		<arg name="map_file" default="$(find nav_main)/maps/lab_nuevo.yaml"/>
 		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
