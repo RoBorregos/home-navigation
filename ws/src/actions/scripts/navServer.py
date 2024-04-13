@@ -16,8 +16,12 @@ from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion, Twist
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actions.msg
 from actions.msg import navServAction, navServGoal, navServResult
+from nav_main.srv import ViewAngle
+
 
 BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
+
+VIEW_ANGLE_TOPIC = "/view_angle"
 
 class navigationServer(object):
 
@@ -28,6 +32,7 @@ class navigationServer(object):
         rospy.loginfo("Waiting for MoveBase AS...")
         self.move_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.move_client.wait_for_server()
+        rospy.Service(VIEW_ANGLE_TOPIC, ViewAngle, self.angle_handler)
         rospy.loginfo("MoveBase AS Loaded ...")
 
         self.initPlaces()
@@ -111,6 +116,36 @@ class navigationServer(object):
             rospy.sleep(1/50)
         vel_msg.angular.z = 0
         velocity_publisher.publish(vel_msg)
+    
+    def angle_handler(self, req):
+        target = req.text
+        
+        if target == "":
+            return -1
+        
+        keys = target.split(" ")
+        
+        current_pose = rospy.wait_for_message("/robot_pose", Pose)
+        print("Current Pose:", current_pose)
+        if (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
+            rospy.loginfo(f"Robot looking to safe pose: {self.placesPoses[keys[0]][keys[1]]}")
+            
+            print("Pose:", self.placesPoses[keys[0]][keys[1]])
+            # print(self.send_goal(self.placesPoses[keys[0]][keys[1]]))
+            
+            angle = math.atan2(
+                (self.placesPoses[keys[0]][keys[1]].position.y - current_pose.position.y),
+                (self.placesPoses[keys[0]][keys[1]].position.x - current_pose.position.x),
+            )
+            print(angle)
+            angle = angle * 180 / math.pi
+            return int(angle)
+        else:
+            rospy.loginfo("Invalid target: " + target)
+            return -1
+  
+# Test service      
+# rosservice call /view_angle "text: 'printers printer_2'"
 
 if __name__ == '__main__':
     rospy.init_node('navServer')
