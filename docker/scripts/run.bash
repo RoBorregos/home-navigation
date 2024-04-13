@@ -49,14 +49,6 @@ case $i in
 esac
 done
 
-USER_HOSTNAME_ARGS=""
-
-ip=$(hostname -I | grep -o '192\.168\.31\.[0-9]\+')
-
-if [ $HOSTNAME != "nano" ] && [ $HOSTNAME != "rbrgs" ] && [ ip != "" ]; then
-    USER_HOSTNAME_ARGS="--add-host $HOSTNAME:$ip"
-fi
-
 IMAGE_NAME="nav"
 
 CONTAINER_NAME="nav"
@@ -72,7 +64,6 @@ $DOCKER_COMMAND -it -d\
     $DOCKER_SSH_AUTH_ARGS \
     $DOCKER_NETWORK_ARGS \
     $ADDITIONAL_COMMANDS \
-    $USER_HOSTNAME_ARGS \
     --add-host nano:192.168.31.123 \
     --add-host rbrgs:192.168.31.23 \
     --privileged \
