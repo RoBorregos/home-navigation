@@ -17,6 +17,7 @@ if [[ "$@" == *"--net "* ]]; then
     DOCKER_NETWORK_ARGS=""
 fi
 
+CONTAINER_NAME="nav"
 VOLUME_COMMANDS=""
 for i in "$@"
 do
@@ -43,6 +44,14 @@ case $i in
     fi
     shift # past argument=value
     ;;
+    --xavier)
+    IMAGE_NAME="nav-xavier"
+    shift # past argument with no value
+    ;;
+    --mediapipe)
+    IMAGE_NAME="nav-mediapipe"
+    shift # past argument with no value
+    ;;
     *)
           # unknown option
     ;;
@@ -51,7 +60,6 @@ done
 
 IMAGE_NAME="nav"
 
-CONTAINER_NAME="nav"
 
 echo "Container name: $CONTAINER_NAME"
 echo "Volumes to mount: $VOLUME_COMMANDS"
