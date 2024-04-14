@@ -2,7 +2,7 @@
 import json
 import rospy
 import actionlib
-from actions.msg import navServAction, navServGoal
+from frida_navigation_interfaces.msg import navServAction, navServGoal
 from geometry_msgs.msg import PoseStamped
 from enum import Enum
 import pathlib

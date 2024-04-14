@@ -14,9 +14,8 @@ import rospy
 from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion, Twist
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-import actions.msg
-from actions.msg import navServAction, navServGoal, navServResult
-from nav_main.srv import ViewAngle
+from frida_navigation_interfaces.msg import navServAction, navServGoal, navServResult
+from frida_navigation_interfaces.srv import ViewAngle
 
 
 BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
@@ -38,7 +37,7 @@ class navigationServer(object):
         self.initPlaces()
 
         # Initialize Navigation Action Server
-        self._as = actionlib.SimpleActionServer(self._action_name, actions.msg.navServAction, execute_cb=self.execute_cb, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, navServAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
     
 
