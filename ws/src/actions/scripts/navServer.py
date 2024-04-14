@@ -4,7 +4,7 @@ import json
 import math
 import tf
 import time
-import numpy
+import numpy as np
 from tf.transformations import quaternion_from_euler
 from std_srvs.srv import Empty
 from nav_msgs.msg import Odometry
@@ -127,22 +127,81 @@ class navigationServer(object):
         current_pose = rospy.wait_for_message("/robot_pose", Pose)
         print("Current Pose:", current_pose)
         if (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
-            rospy.loginfo(f"Robot looking to safe pose: {self.placesPoses[keys[0]][keys[1]]}")
+            return self.rotate_robot_angle(current_pose, self.placesPoses[keys[0]][keys[1]])
+            # rospy.loginfo(f"Robot looking to safe pose: {self.placesPoses[keys[0]][keys[1]]}")
             
-            print("Pose:", self.placesPoses[keys[0]][keys[1]])
-            # print(self.send_goal(self.placesPoses[keys[0]][keys[1]]))
+            # print("Pose:", self.placesPoses[keys[0]][keys[1]])
+            # # print(self.send_goal(self.placesPoses[keys[0]][keys[1]]))
             
-            angle = math.atan2(
-                (self.placesPoses[keys[0]][keys[1]].position.y - current_pose.position.y),
-                (self.placesPoses[keys[0]][keys[1]].position.x - current_pose.position.x),
-            )
-            print(angle)
-            angle = angle * 180 / math.pi
-            return int(angle)
+            # angle = math.atan2(
+            #     (self.placesPoses[keys[0]][keys[1]].position.y - current_pose.position.y),
+            #     (self.placesPoses[keys[0]][keys[1]].position.x - current_pose.position.x),
+            # )
+            # print(angle)
+            # angle = angle * 180 / math.pi
+            # return int(angle)
         else:
             rospy.loginfo("Invalid target: " + target)
             return -1
   
+  
+    def rotate_robot_angle(self, current_pose, target_position):
+        angle = math.atan2(
+                (target_position.position.y - current_pose.position.y),
+                (target_position.position.x - current_pose.position.x),
+        )
+        
+        print(f"Robot angle: {current_pose.orientation.z}    Goal Angle: {angle}")
+        
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "map"
+
+        pose.pose.position.x = current_pose.position.x
+        pose.pose.position.y = current_pose.position.y
+        pose.pose.position.z = current_pose.position.z
+        
+        quat = self.get_quaternion_from_euler(0, 0, angle)
+        
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+
+        goal = MoveBaseGoal()
+        goal.target_pose = pose
+        self.move_client.send_goal(goal)
+        self.move_client.wait_for_result()
+        
+        return angle
+    
+    def get_quaternion_from_euler(self, roll, pitch, yaw):
+        """
+        Convert an Euler angle to a quaternion.
+
+        Input
+            :param roll: The roll (rotation around x-axis) angle in radians.
+            :param pitch: The pitch (rotation around y-axis) angle in radians.
+            :param yaw: The yaw (rotation around z-axis) angle in radians.
+
+        Output
+            :return qx, qy, qz, qw: The orientation in quaternion [x,y,z,w] format
+        """
+        qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(
+            roll / 2
+        ) * np.sin(pitch / 2) * np.sin(yaw / 2)
+        qy = np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2) + np.sin(
+            roll / 2
+        ) * np.cos(pitch / 2) * np.sin(yaw / 2)
+        qz = np.cos(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2) - np.sin(
+            roll / 2
+        ) * np.sin(pitch / 2) * np.cos(yaw / 2)
+        qw = np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) + np.sin(
+            roll / 2
+        ) * np.sin(pitch / 2) * np.sin(yaw / 2)
+
+        return [qx, qy, qz, qw]
+
 # Test service      
 # rosservice call /view_angle "text: 'printers printer_2'"
 
