@@ -2,7 +2,7 @@
 import rospy
 import tf2_ros
 
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PointStamped, Pose
 from tf2_geometry_msgs import PoseStamped
 from actionlib_msgs.msg import GoalStatusArray
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
@@ -34,29 +34,26 @@ class HumanPositionGetter:
         self.last_person_pos = (-1, -1)
         self.map_data = []
 
-        self.modified_map_publisher = rospy.Publisher(
-            "/map", OccupancyGrid, queue_size=10
-        )
-        self.map_subscriber = rospy.Subscriber(
-            "/map_original", OccupancyGrid, self.map_callback
-        )
+        # self.modified_map_publisher = rospy.Publisher(
+        #     "/map", OccupancyGrid, queue_size=10
+        # )
+        # self.map_subscriber = rospy.Subscriber(
+        #     "/map", OccupancyGrid, self.map_callback
+        # )
 
         rospy.loginfo("Initializing")
         self.move_client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         self.move_client.wait_for_server()
         rospy.loginfo("Initializing")
 
-        self.pose_subscriber = rospy.Subscriber(
-            "/person_pose_base", PointStamped, self.pose_callback
-        )
-        # self.follow_person_subscriber = rospy.Subscriber(
-        #     "/follow_person", Bool, self.follow_person_callback
-        # )
         self.odom_subscriber = rospy.Subscriber(
             # Robot_pose when running AMCL and run slam_out_pose when running Hector_Slam
-            "/slam_out_pose",
-            PoseStamped,
+            "/robot_pose",
+            Pose,
             self.odom_callback,
+        )
+        self.pose_subscriber = rospy.Subscriber(
+            "/person_pose_base", PointStamped, self.pose_callback
         )
         self.goal_sub = rospy.Subscriber(
             "/move_base/status", GoalStatusArray, self.goal_callback
@@ -97,7 +94,7 @@ class HumanPositionGetter:
 
     def publish_map(self, map: OccupancyGrid):
         map.data = tuple(self.map_data)
-        self.modified_map_publisher.publish(map)
+        # self.modified_map_publisher.publish(map)
 
     def map_callback(self, map: OccupancyGrid):
         self.map_data = list(map.data)
@@ -106,10 +103,6 @@ class HumanPositionGetter:
         self.map_resolution = map.info.resolution
         self.map_origin_x = map.info.origin.position.x
         self.map_origin_y = map.info.origin.position.y
-
-        # if not self.follow_person:
-        #     self.publish_map(map)
-        #     return
 
         if self.last_person_pos != (-1, -1):
             print("removing last person pos")
@@ -163,13 +156,9 @@ class HumanPositionGetter:
 
         return [qx, qy, qz, qw]
 
-    # def follow_person_callback(self, follow_person: Bool):
-    #     print("follow person")
-    #     print(f"Received: {follow_person}")
-    #     self.follow_person = follow_person.data
-
-    def odom_callback(self, robot_pose: PoseStamped):
-        robot_pose = robot_pose.pose
+    def odom_callback(self, robot_pose: Pose):
+        # print(f"Robot pose: {robot_pose}")
+        
         self.robot_position = np.array(
             [robot_pose.position.x, robot_pose.position.y, robot_pose.position.z]
         )
@@ -210,22 +199,11 @@ class HumanPositionGetter:
         pose.pose.position.y *= safe_distance_multiplier
 
         try:
-            self.tf_buffer.lookup_transform("map", "base_footprint", rospy.Time())
-            # self.tf_buffer.wait_for_transform("map", "base_footprint", rospy.Time(), rospy.Duration(1))
-            # self.tf_buffer.can_transform("map", "base_footprint", rospy.Time())
-        except Exception as e:
-            print(e)
-            rospy.logerr("error on transformation lookup")
-            self.rate.sleep()
-            return
-            # rospy.signal_shutdown("transformation not available")
-
-        try:
             person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
         except Exception as e:
             print(e)
             rospy.logerr("Failed to transform object pose from body_frame to map_frame")
-            self.rate.sleep()
+            # self.rate.sleep()
             return
             # rospy.signal_shutdown("Transformation failed")
 
@@ -240,10 +218,10 @@ class HumanPositionGetter:
         pose.pose.position.z = 0
 
         # update person positions for map modifications
-        self.last_person_pos = self.current_person_pos
-        self.current_person_pos = self.get_position_cell(
-            pose.pose.position.x, pose.pose.position.y
-        )
+        # self.last_person_pos = self.current_person_pos
+        # self.current_person_pos = self.get_position_cell(
+        #     pose.pose.position.x, pose.pose.position.y
+        # )
 
         self.angle = math.atan2(
             (person_pose_map.pose.position.y - self.robot_position[1]),
@@ -252,7 +230,8 @@ class HumanPositionGetter:
 
         quat = self.get_quaternion_from_euler(0, 0, self.angle)
 
-        print(f"Robot angle: {self.robot_orientation[2]}    Goal Angle: {self.angle}")
+        # print(f"Goal Angle: {self.angle}")
+        # print(f"Robot angle: {self.robot_orientation[2]}    Goal Angle: {self.angle}")
 
         pose.pose.orientation.x = quat[0]
         pose.pose.orientation.y = quat[1]
