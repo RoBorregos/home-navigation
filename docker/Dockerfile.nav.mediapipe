@@ -20,11 +20,11 @@ RUN apt install -y ros-noetic-fkie-multimaster
 # Install python packages
 RUN pip install numpy>=1.19.3 opencv-python cv_bridge mediapipe
 
-RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
-RUN echo "alias master='export ROS_MASTER_URI=http://192.168.31.23:11311'" >> ~/.bashrc
-RUN echo "alias master-nano='export ROS_MASTER_URI=http://192.168.31.123:11311'" >> ~/.bashrc
-RUN echo "alias rosip-nano='export ROS_IP=192.168.31.123'" >> ~/.bashrc
-RUN echo "alias rosip-xavier='export ROS_IP=192.168.31.23'" >> ~/.bashrc
+RUN echo "source /opt/ros/noetic/setup.bash" >> /home/ros/.bashrc
+RUN echo "alias master='export ROS_MASTER_URI=http://192.168.31.23:11311'" >> /home/ros/.bashrc
+RUN echo "alias master-nano='export ROS_MASTER_URI=http://192.168.31.123:11311'" >> /home/ros/.bashrc
+RUN echo "alias rosip-nano='export ROS_IP=192.168.31.123'" >> /home/ros/.bashrc
+RUN echo "alias rosip-xavier='export ROS_IP=192.168.31.23'" >> /home/ros/.bashrc
 
 RUN mkdir /workspace
 
