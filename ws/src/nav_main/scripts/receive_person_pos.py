@@ -20,7 +20,6 @@ class HumanPositionGetter:
 
     def __init__(self) -> None:
         self.rate = rospy.Rate(10)
-        self.follow_person = False
 
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -48,7 +47,7 @@ class HumanPositionGetter:
         rospy.loginfo("Initializing")
 
         self.pose_subscriber = rospy.Subscriber(
-            "/person_pose_odom", PointStamped, self.pose_callback
+            "/person_pose_base", PointStamped, self.pose_callback
         )
         # self.follow_person_subscriber = rospy.Subscriber(
         #     "/follow_person", Bool, self.follow_person_callback
@@ -190,8 +189,6 @@ class HumanPositionGetter:
         print(
             f"pose callback {person_pose_odom.point.x}, {person_pose_odom.point.y}, {person_pose_odom.point.z}"
         )
-        if not self.follow_person:
-            return
 
         pose = PoseStamped()
         pose.header.stamp = rospy.Time.now()
@@ -264,14 +261,14 @@ class HumanPositionGetter:
 
         self.person_pose_map_pub.publish(pose)
 
-        if self.follow_person:
+        # if self.follow_person:
             # if (
             #     self.goal_status == 3 or self.goal_status == -1 or self.goal_status == 4
             # ) and (pose.pose.position.x - self.ned_origin[0]) <= 4:
-            print("sending goal")
-            goal = MoveBaseGoal()
-            goal.target_pose = pose
-            self.move_client.send_goal(goal)
+        print("sending goal")
+        goal = MoveBaseGoal()
+        goal.target_pose = pose
+        self.move_client.send_goal(goal)
         # self.move_client.wait_for_result()
 
         # Publish nav goal
