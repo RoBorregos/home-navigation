@@ -19,9 +19,9 @@ TebLocalPlannerROS:
  acc_lim_theta: 0.2  # (default: 0.5) The maximum angular acceleration (in rad/s^2).
  min_turning_radius: 0.0  # (default: 0.0) The minimum turning radius (in meters).
  footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
-   #radius: 0.23 # for type "circular"
+   radius: 0.21 # for type "circular"
    #vertices: [[-0.085, -0.20], [-0.085, 0.4],[0.315, 0.4], [0.315, -0.2]]  #Including gripper
-   vertices: [[-0.085, -0.20], [-0.085, 0.2],[0.315, 0.2], [0.315, -0.2]] # The vertices of the robot's footprint.
+   #vertices: [[-0.085, -0.20], [-0.085, 0.2],[0.315, 0.2], [0.315, -0.2]] # The vertices of the robot's footprint.
 
  # GoalTolerance
  xy_goal_tolerance: 0.1  # (default: 0.2) The tolerance (in meters) for the goal position.
