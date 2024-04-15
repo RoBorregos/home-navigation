@@ -3,9 +3,9 @@
 import json
 import math
 import tf
+import tf.transformations as transformations
 import time
 import numpy as np
-from tf.transformations import quaternion_from_euler
 from std_srvs.srv import Empty
 from nav_msgs.msg import Odometry
 import pathlib
@@ -35,7 +35,7 @@ class navigationServer(object):
         rospy.loginfo("MoveBase AS Loaded ...")
 
         self.initPlaces()
-
+        
         # Initialize Navigation Action Server
         self._as = actionlib.SimpleActionServer(self._action_name, navServAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
@@ -116,6 +116,8 @@ class navigationServer(object):
         vel_msg.angular.z = 0
         velocity_publisher.publish(vel_msg)
     
+    # Given a string req, where req makes reference to a place and a subplace, the robot will rotate to look at the subplace
+    # The place must be defined in the areas.json file
     def angle_handler(self, req):
         target = req.text
         
@@ -124,27 +126,56 @@ class navigationServer(object):
         
         keys = target.split(" ")
         
+        # Obtain the robot's current pose
         current_pose = rospy.wait_for_message("/robot_pose", Pose)
-        print("Current Pose:", current_pose)
+        # Transform the quaternion to euler angles
+        res = transformations.euler_from_quaternion([current_pose.orientation.w, current_pose.orientation.x, current_pose.orientation.y, current_pose.orientation.z])
+        # Normalize angle to the range [0, 2pi]
+        robot_yaw = (res[0] + math.pi) % (2*math.pi)
+        # Convert to counter-clockwise angle
+        robot_yaw_2pi = 2 * math.pi - self.angle_transform(robot_yaw)
+        
+        # print("Euler yaw:", robot_yaw_2pi)
+        
         if (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
-            return self.rotate_robot_angle(current_pose, self.placesPoses[keys[0]][keys[1]])
-            # rospy.loginfo(f"Robot looking to safe pose: {self.placesPoses[keys[0]][keys[1]]}")
             
-            # print("Pose:", self.placesPoses[keys[0]][keys[1]])
-            # # print(self.send_goal(self.placesPoses[keys[0]][keys[1]]))
+            # Offset of robot's arm with respect to robot base
+            offset_angle = -90
             
-            # angle = math.atan2(
-            #     (self.placesPoses[keys[0]][keys[1]].position.y - current_pose.position.y),
-            #     (self.placesPoses[keys[0]][keys[1]].position.x - current_pose.position.x),
-            # )
-            # print(angle)
-            # angle = angle * 180 / math.pi
-            # return int(angle)
+            # Angle between place to look and robot's current position (rad)
+            angle = math.atan2(
+                (self.placesPoses[keys[0]][keys[1]].position.y - current_pose.position.y),
+                (self.placesPoses[keys[0]][keys[1]].position.x - current_pose.position.x),
+            )
+            
+            angle_2pi = self.angle_transform(angle) # Transform to range [0, 2pi]
+            
+            xarm_move_to_angle = angle_2pi - robot_yaw_2pi + math.radians(offset_angle)
+            
+            # Normalize angle to the range [0, 2pi]
+            if xarm_move_to_angle < 0:
+                xarm_move_to_angle += 2 * math.pi
+            
+            #The FINAL ANGLE that the XARM will get in order to rotate with its offset
+            print("Target Angle: ", math.degrees(xarm_move_to_angle))
+            
+            # Degree of the angle to rotate the xarm
+            return int(math.degrees(xarm_move_to_angle))
         else:
             rospy.loginfo("Invalid target: " + target)
             return -1
-  
-  
+
+    def angle_transform(self, angle):
+        # Normalize angle to the range -pi to pi
+        angle = (angle + math.pi) % (2*math.pi) - math.pi
+
+        # Convert angle to the range 0 to 360
+        if angle < 0:
+            angle += 2*math.pi
+
+        return angle
+
+    # Move the robot dashgo to a specific angle
     def rotate_robot_angle(self, current_pose, target_position):
         angle = math.atan2(
                 (target_position.position.y - current_pose.position.y),
