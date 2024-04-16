@@ -4,7 +4,7 @@ import rospy
 
 import tf2_ros
 from actions.srv import CreateGoal
-from tf2_geometry_msgs import PoseStamped, PointStamped
+from tf2_geometry_msgs import PoseStamped
 
 
 class GoalCreator:
@@ -59,7 +59,7 @@ class GoalCreator:
 
         self.test_pub.publish(target_pose)            
         print(f"Final target: ({target_pose})")
-        return target_pose.pose
+        return target_pose
 
 
 if __name__ == "__main__":
