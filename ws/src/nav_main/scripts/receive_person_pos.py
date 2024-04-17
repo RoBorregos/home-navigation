@@ -34,6 +34,9 @@ class HumanPositionGetter:
         self.last_person_pos = (-1, -1)
         self.map_data = []
 
+        self.executing_goal = False
+        self.robot_position = None
+
         # self.modified_map_publisher = rospy.Publisher(
         #     "/map", OccupancyGrid, queue_size=10
         # )
@@ -53,7 +56,7 @@ class HumanPositionGetter:
             self.odom_callback,
         )
         self.pose_subscriber = rospy.Subscriber(
-            "/person_pose_base", PointStamped, self.pose_callback
+            "/person_pose_base", PointStamped, self.pose_callback, queue_size=1
         )
         self.goal_sub = rospy.Subscriber(
             "/move_base/status", GoalStatusArray, self.goal_callback
@@ -175,6 +178,13 @@ class HumanPositionGetter:
         self.goal_status = data.status_list
 
     def pose_callback(self, person_pose_odom: PointStamped):
+        if self.executing_goal:
+            return
+
+        if self.robot_position is None:
+            print("Robot position not set")
+            return
+
         print(
             f"pose callback {person_pose_odom.point.x}, {person_pose_odom.point.y}, {person_pose_odom.point.z}"
         )
@@ -183,20 +193,9 @@ class HumanPositionGetter:
         pose.header.stamp = rospy.Time.now()
         pose.header.frame_id = "base_footprint"
 
-        pose.pose.position.x = person_pose_odom.point.x
+        pose.pose.position.x = person_pose_odom.point.x 
         pose.pose.position.y = person_pose_odom.point.y
-        pose.pose.position.z = 0
-
-        distance_to_person = np.sqrt(
-            (pose.pose.position.x) ** 2 + (pose.pose.position.y) ** 2
-        )
-        if distance_to_person < 0.5 or distance_to_person > 2.5:
-            print("Person too close or too far")
-            return
-
-        safe_distance_multiplier = 0.6
-        pose.pose.position.x *= safe_distance_multiplier
-        pose.pose.position.y *= safe_distance_multiplier
+        pose.pose.position.z = person_pose_odom.point.z
 
         try:
             person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
@@ -207,7 +206,67 @@ class HumanPositionGetter:
             return
             # rospy.signal_shutdown("Transformation failed")
 
-        # print(person_pose_map)
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "map"
+
+        pose.pose.position.x = person_pose_map.pose.position.x
+        pose.pose.position.y = person_pose_map.pose.position.y
+        pose.pose.position.z = person_pose_map.pose.position.z
+
+        self.angle = math.atan2(
+            (pose.pose.position.y - self.robot_position[1]),
+            (pose.pose.position.x - self.robot_position[0]),
+        )
+
+        quat = self.get_quaternion_from_euler(0, 0, self.angle)
+
+        # pose.pose.orientation.x = quat[0]
+        # pose.pose.orientation.y = quat[1]
+        # pose.pose.orientation.z = quat[2]
+        # pose.pose.orientation.w = quat[3]
+
+        try:
+            person_pose_base = self.tf_buffer.transform(pose, "base_footprint", rospy.Duration(1))
+        except Exception as e:
+            print(e)
+            rospy.logerr("Failed to transform object pose from body_frame to map_frame")
+            # self.rate.sleep()
+            return
+            # rospy.signal_shutdown("Transformation failed")
+
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "base_footprint"
+
+        # safe_distance_multiplier = 0.6
+        # pose.pose.position.x *= safe_distance_multiplier
+        # pose.pose.position.y *= safe_distance_multiplier
+
+        pose.pose.position.x = person_pose_base.pose.position.x - 0.5
+        pose.pose.position.y = person_pose_base.pose.position.y
+        pose.pose.position.z = person_pose_base.pose.position.z
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+
+
+        distance_to_person = np.sqrt(
+            (pose.pose.position.x) ** 2 + (pose.pose.position.y) ** 2
+        )
+        if distance_to_person < 0.4 or distance_to_person > 4:
+            print("Person too close or too far")
+            return
+        
+        try:
+            person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
+        except Exception as e:
+            print(e)
+            rospy.logerr("Failed to transform object pose from body_frame to map_frame")
+            # self.rate.sleep()
+            return
+            # rospy.signal_shutdown("Transformation failed")
 
         pose = PoseStamped()
         pose.header.stamp = rospy.Time.now()
@@ -216,6 +275,10 @@ class HumanPositionGetter:
         pose.pose.position.x = person_pose_map.pose.position.x
         pose.pose.position.y = person_pose_map.pose.position.y
         pose.pose.position.z = 0
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
 
         # update person positions for map modifications
         # self.last_person_pos = self.current_person_pos
@@ -223,39 +286,22 @@ class HumanPositionGetter:
         #     pose.pose.position.x, pose.pose.position.y
         # )
 
-        self.angle = math.atan2(
-            (person_pose_map.pose.position.y - self.robot_position[1]),
-            (person_pose_map.pose.position.x - self.robot_position[0]),
-        )
-
-        quat = self.get_quaternion_from_euler(0, 0, self.angle)
-
-        # print(f"Goal Angle: {self.angle}")
-        # print(f"Robot angle: {self.robot_orientation[2]}    Goal Angle: {self.angle}")
-
-        pose.pose.orientation.x = quat[0]
-        pose.pose.orientation.y = quat[1]
-        pose.pose.orientation.z = quat[2]
-        pose.pose.orientation.w = quat[3]
+        print("sending goal")
+        # self.executing_goal = True
 
         self.person_pose_map_pub.publish(pose)
 
-        # if self.follow_person:
-            # if (
-            #     self.goal_status == 3 or self.goal_status == -1 or self.goal_status == 4
-            # ) and (pose.pose.position.x - self.ned_origin[0]) <= 4:
-        print("sending goal")
+        self.move_client.cancel_all_goals()
         goal = MoveBaseGoal()
         goal.target_pose = pose
         self.move_client.send_goal(goal)
-        # self.move_client.wait_for_result()
 
-        # Publish nav goal
-        # self.pub_follow.publish(pose)
+        self.move_client.wait_for_result(rospy.Duration(3))
+        self.executing_goal = False
 
 
 if __name__ == "__main__":
-    rospy.init_node("human_pose_getter", anonymous=True)
+    rospy.init_node("human_pose_getter", anonymous=False)
 
     humanGetter = HumanPositionGetter()
     rospy.spin()
