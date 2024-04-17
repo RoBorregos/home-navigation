@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   move_base_msgs
   rospy
   std_msgs
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -69,7 +70,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate actions in the 'action' folder
  add_action_files(
     DIRECTORY action
-    FILES navServ.action
+    FILES 
+    navServ.action
+    moveAction.action
   )
 
 ## Generate added messages and services with any dependencies listed here
@@ -110,7 +113,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES actionlib_tutorial
-   CATKIN_DEPENDS actionlib actionlib_msgs move_base_msgs geometry_msgs roscpp rospy std_msgs message_runtime
+  CATKIN_DEPENDS actionlib actionlib_msgs move_base_msgs geometry_msgs roscpp rospy std_msgs message_runtime sensor_msgs
 #  DEPENDS system_lib
 )
 
