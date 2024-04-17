@@ -3,7 +3,7 @@
 import rospy
 
 import tf2_ros
-from actions.srv import CreateGoal
+from frida_navigation_interfaces.srv import CreateGoal
 from tf2_geometry_msgs import PoseStamped
 
 
@@ -16,7 +16,7 @@ class GoalCreator:
             "/create_goal", CreateGoal, self.create_goal
         )
 
-        self.test_pub = rospy.Publisher("/test_base", PoseStamped, queue_size=10)
+        # self.test_pub = rospy.Publisher("/test_base", PoseStamped, queue_size=10)
 
         rospy.loginfo("Goal Creator Service is ready")
 
@@ -57,7 +57,7 @@ class GoalCreator:
             print("Transform lookup failed.")
             return
 
-        self.test_pub.publish(target_pose)            
+        # self.test_pub.publish(target_pose)            
         print(f"Final target: ({target_pose})")
         return target_pose
 
