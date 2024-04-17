@@ -11,6 +11,7 @@ import sys
 import math
 from math import fabs
 import numpy as np
+import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 import rospy
@@ -132,16 +133,16 @@ class HumanPositionPublisher:
             point_x.point.y = point3D.y
             point_x.point.z = point3D.z
 
-            print(point_x)
+            # print(point_x)
 
             try:
                 target_pt = self.tf_buffer.transform(point_x, "base_footprint")
-                print(f"Transformed point: ({target_pt.point.x}, {target_pt.point.y}, {target_pt.point.z})")
+                # print(f"Transformed point: ({target_pt.point.x}, {target_pt.point.y}, {target_pt.point.z})")
+                print(f"Transformed point: ({target_pt})")
             except tf2_ros.LookupException:
                 print("Transform lookup failed.")
+                return
                 
-            target_pt.point.z = 0
-            target_pt.point.x -= 0.2
             if target_pt.point.x < 0.3:
                 print("Too close to the robot")
                 # return
