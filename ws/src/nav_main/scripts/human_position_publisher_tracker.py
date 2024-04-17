@@ -27,10 +27,10 @@ class HumanPositionPublisher:
     def __init__(self):
         self.bridge = CvBridge()
         self.pose_publisher = rospy.Publisher(
-            "/person_pose_odom", PointStamped, queue_size=5
+            "/person_pose_base", PointStamped, queue_size=5
         )
         self.test_pose_publisher = rospy.Publisher(
-            "/test_person_pose_odom", PointStamped, queue_size=5
+            "/test_person_pose_base", PointStamped, queue_size=5
         )
         self.image_subscriber = rospy.Subscriber(
             "/zed2/zed_node/rgb/image_rect_color", Image, self.image_callback
@@ -42,10 +42,11 @@ class HumanPositionPublisher:
             "/zed2/zed_node/depth/camera_info", CameraInfo, self.camera_info_callback
         )
 
-        self.follow_person = False
         self.change_follow_state = rospy.Service("/change_follow_person_state", SetBool, self.change_follow_person_state)
         self.change_person_tracker_state = rospy.ServiceProxy("/change_person_tracker_state", SetBool)
         self.person_tracker_subscriber = rospy.Subscriber("/person_detection", Point, self.person_tracker_callback)
+
+        self.follow_person = False
 
         self.cv_image = None
         self.camera_info = None
@@ -139,13 +140,12 @@ class HumanPositionPublisher:
             except tf2_ros.LookupException:
                 print("Transform lookup failed.")
                 
-            test_point_x = target_pt
-            test_point_x.point.z = 0
-            test_point_x.point.x -= 0.2
-            if test_point_x.point.x < 0.3:
+            target_pt.point.z = 0
+            target_pt.point.x -= 0.2
+            if target_pt.point.x < 0.3:
                 print("Too close to the robot")
                 # return
-            self.pose_publisher.publish(test_point_x)
+            self.pose_publisher.publish(target_pt)
             self.test_pose_publisher.publish(point_x)
 
     def get_depth(self, depthframe_, pixel):

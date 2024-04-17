@@ -81,7 +81,7 @@ $DOCKER_COMMAND -it -d\
     -v /dev:/dev \
     --device /dev/video0:/dev/video0 \
     $VOLUME_COMMANDS \
-    -w /workspace \
+    -w /workspace/ws \
     --name=$CONTAINER_NAME \
     $IMAGE_NAME \
     bash
