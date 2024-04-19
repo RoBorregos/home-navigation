@@ -6,6 +6,7 @@ import rospy
 import copy
 import json
 import os
+import time
 
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
@@ -15,7 +16,7 @@ from nav_msgs.msg import Odometry
 import pathlib
 
 from math import sin
-BASE_PATH = str(pathlib.Path(__file__).parent) + "/areas.json"
+BASE_PATH = str(pathlib.Path(__file__).parent) + '/areas.json'
 
 server = None
 odom_pose = None
@@ -27,7 +28,31 @@ menu_handler = MenuHandler()
 not_moving_marker = InteractiveMarker()
 arrow_marker = InteractiveMarker()
 
+publisher = None
+rate = None
+count = 0
 #roi_dict = {"Test 1" : {"test1.1": "1.1", "Test1.2":"1.2"}, "Test 2" : {"test2.1": "2.1", "Test2.2":"2.2"}, "Test 3" : {"test3.1": "3.1", "Test3.2":"3.2"}}
+
+def createMsg():
+    poses = []
+    with open(BASE_PATH) as json_file:
+        data = json.load(json_file)
+        for key in data:
+            for subkey in data[key]:
+                newPose = Pose()
+                newPose.position.x = data[key][subkey][0]
+                newPose.position.y = data[key][subkey][1]
+                newPose.position.z = data[key][subkey][2]
+                newPose.orientation.x = data[key][subkey][3]
+                newPose.orientation.y = data[key][subkey][4]
+                newPose.orientation.z = data[key][subkey][5]
+                newPose.orientation.w = data[key][subkey][6]
+
+                poses.append(newPose)
+
+    return poses
+
+
 
 def pose_callback(data):
     global robot_pose, not_moving_marker
@@ -59,6 +84,7 @@ def makeBox(  ):
     marker.color.g = 0.5
     marker.color.b = 0.5
     marker.color.a = 1.0
+    # marker.pose.position.z = 0.2
 
     return marker
 
@@ -73,6 +99,7 @@ def makeArrow(  ):
     marker.color.g = 0.5
     marker.color.b = 0.5
     marker.color.a = 1.0
+    # marker.pose.position.z = 0.2
 
     return marker
 
@@ -92,8 +119,9 @@ def processFeedback( feedback ):
 
 def makeMovingMarker(position):
     int_marker = InteractiveMarker()
-    int_marker.header.frame_id = "base_footprint"
+    int_marker.header.frame_id = "map"
     int_marker.pose.position = position
+    int_marker.pose.position.z = 0.1
     int_marker.scale = 0.5
 
     int_marker.name = "robot_context_menu"
@@ -126,11 +154,13 @@ def makeMovingMarker(position):
     int_marker.controls.append(copy.deepcopy(control))
 
     server.insert(int_marker, processFeedback)
+    
+    poses = createMsg()
 
 
 def makeArrowMarker( position ):
     global arrow_marker
-    arrow_marker.header.frame_id = "base_footprint"
+    arrow_marker.header.frame_id = "map"
     arrow_marker.pose.position = position
     arrow_marker.scale = 0.5
 
@@ -149,7 +179,7 @@ def makeArrowMarker( position ):
 
 def makeMenuMarker( position ):
     global not_moving_marker
-    not_moving_marker.header.frame_id = "odom" # pose
+    not_moving_marker.header.frame_id = "base_footprint" # pose
     not_moving_marker.pose.position = position
     not_moving_marker.scale = 0.5
 
@@ -185,7 +215,7 @@ def poseFeedback( feedback ):
     context = context.split('-')
     last_key1 = context[0]
     last_key2 = context[1]
-    rospy.loginfo("Insert ROI => ROI Room: " + context[0] + " ROI Place" + context[1] + "\nPOSE: x = {} y = {} z = {}\nORIENTATION: x = {} y = {} z = {} w = {}".format(feedback.pose.position.x, feedback.pose.position.y, feedback.pose.position.z, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w))   
+    rospy.loginfo("Insert ROI => ROI Room: " + context[0] + " ROI Place" + context[1] + "\nPOSE: x = {} y = {} z = {}\nORIENTATION: x = {} y = {} z = {} w = {}".format(feedback.pose.position.x, feedback.pose.position.y, 0, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w))   
     savePose(context[0], context[1] , feedback.pose.position.x, feedback.pose.position.y, 0, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w)
 
 def initDict(config_file):
@@ -218,6 +248,9 @@ if __name__=="__main__":
     try: 
       rospy.init_node("map_roi")
       rospy.loginfo("Init ROS Node: map_roi")
+    #   publsiher = rospy.Publisher('poses', Pose, queue_size=10)
+
+      rate = rospy.Rate(1)
 
       try:   
         server = InteractiveMarkerServer("map_roi")
@@ -244,6 +277,13 @@ if __name__=="__main__":
 
       menu_handler.apply( server, "robot_context_menu" )
       server.applyChanges()
+    #   poses = createMsg()
+
+    
+    #   for i in poses:
+    #     publsiher.publish(i)
+    #     time.sleep(5)
+      
 
       rospy.spin()
 

@@ -8,10 +8,10 @@ class MoveClient(object):
         self.client = actionlib.SimpleActionClient('moveServer', moveActionAction)
         self.client.wait_for_server()
         self.goal = moveActionGoal()
-        self.goal.goal_type = moveActionGoal.BACKWARD
+        self.goal.goal_type = moveActionGoal.FORWARD
         self.client.send_goal(self.goal)
         self.client.wait_for_result()
-        rospy.loginfo('Goal reached')
+        rospy.loginfo('Goal reached CLIENT')
 
 if __name__ == '__main__':
     rospy.init_node('moveClient')

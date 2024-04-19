@@ -2,7 +2,7 @@
 import rospy    
 import actionlib
 import math
-from actions.msg import moveActionAction, moveActionGoal
+from actions.msg import moveActionAction, moveActionGoal, moveActionResult
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 
@@ -12,14 +12,15 @@ class MoveServer(object):
     def __init__(self):
         self.scan_data = None
         self.max_range = 0.8
-        self.min_range = 0.6
-        self.x_vel = 0.1
+        self.min_range = 0.35
+        self.x_vel = 0.05
         self.success = True
         self.server = actionlib.SimpleActionServer('moveServer', moveActionAction, self.execute, False)
         self.server.start()
-        self.r = rospy.Rate(10)
-        self.scan_sub = rospy.Subscriber('/pc2ls/scan', LaserScan, self.scan_callback)
+        self.r = rospy.Rate(50)
+        self.scan_sub = rospy.Subscriber('/pc2ls/scan', LaserScan, self.scan_callback, queue_size=1)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        rospy.loginfo('Move server initialized')
 
     def execute(self, goal):
         while self.scan_data is None:
@@ -46,15 +47,17 @@ class MoveServer(object):
             return
         
         if not DEBUG:
-            cmd_vel.linear.x = 0
+            cmd_vel.linear.x = self.x_vel
             self.cmd_vel_pub.publish(cmd_vel)
             
         if self.success:
             rospy.loginfo('Goal reached')
-            self.server.set_succeeded()
+            self.server.set_succeeded(moveActionResult(result=True))
         else:
             rospy.loginfo('Goal not reached')
             self.server.set_aborted()
+
+        return
 
     def move_forward(self, cmd_vel):
         min_distance = self.max_range
