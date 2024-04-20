@@ -44,6 +44,8 @@ class HumanPositionGetter:
         #     "/map", OccupancyGrid, self.map_callback
         # )
 
+        self.directions = [0.1, 0 , -0.1, 0, 0.1]
+
         rospy.loginfo("Initializing")
         self.move_client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         self.move_client.wait_for_server()
@@ -176,8 +178,170 @@ class HumanPositionGetter:
     # For thread on sending new goal once it completes the last one
     def goal_callback(self, data):
         self.goal_status = data.status_list
+    
+    def BFS(self, x, y):
+        # if x, y is outside maze, return false
+        visited = [[False for _ in range(self.map_width)] for _ in range(self.map_height)]
+        queue = []
+
+        queue.append({x, y})
+        current = self.get_position_cell(x, y)
+        visited[current[0]][current[1]] = True
+
+        while len(queue) > 0:
+            current_raw = queue.pop(0)
+            current = self.get_position_cell(x, y)
+            
+            if self.map_data[current[0] * self.map_width + current[1]] == 0:
+                return current_raw
+
+            for dir in self.directions:
+                dir = self.get_position_cell(dir[0], dir[1])
+                new_row = current[0] + dir[0] 
+                new_col = current[1] + dir[1]
+
+                if visited[new_row][new_col]:
+                    continue
+
+                visited[new_row][new_col] = True
+                
+                distance = math.sqrt((new_row ** 2, new_col ** 2))
+                if distance < 0.4 or distance > 4:
+                    print("Person too close or too far")
+                    break
+
+                queue.append({new_row, new_col})
+
+        return {}
 
     def pose_callback(self, person_pose_odom: PointStamped):
+        if self.executing_goal:
+            return
+
+        if self.robot_position is None:
+            print("Robot position not set")
+            return
+
+        print(
+            f"pose callback {person_pose_odom.point.x}, {person_pose_odom.point.y}, {person_pose_odom.point.z}"
+        )
+
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "base_footprint"
+
+        pose.pose.position.x = person_pose_odom.point.x 
+        pose.pose.position.y = person_pose_odom.point.y
+        pose.pose.position.z = person_pose_odom.point.z
+
+        try:
+            person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
+        except Exception as e:
+            print(e)
+            rospy.logerr("Failed to transform object pose from body_frame to map_frame")
+            # self.rate.sleep()
+            return
+            # rospy.signal_shutdown("Transformation failed")
+
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "map"
+
+        pose.pose.position.x = person_pose_map.pose.position.x
+        pose.pose.position.y = person_pose_map.pose.position.y
+        pose.pose.position.z = person_pose_map.pose.position.z
+
+        self.angle = math.atan2(
+            (pose.pose.position.y - self.robot_position[1]),
+            (pose.pose.position.x - self.robot_position[0]),
+        )
+
+        quat = self.get_quaternion_from_euler(0, 0, self.angle)
+
+        # pose.pose.orientation.x = quat[0]
+        # pose.pose.orientation.y = quat[1]
+        # pose.pose.orientation.z = quat[2]
+        # pose.pose.orientation.w = quat[3]
+
+        try:
+            person_pose_base = self.tf_buffer.transform(pose, "base_footprint", rospy.Duration(1))
+        except Exception as e:
+            print(e)
+            rospy.logerr("Failed to transform object pose from body_frame to map_frame")
+            # self.rate.sleep()
+            return
+            # rospy.signal_shutdown("Transformation failed")
+
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "base_footprint"
+
+        # safe_distance_multiplier = 0.6
+        # pose.pose.position.x *= safe_distance_multiplier
+        # pose.pose.position.y *= safe_distance_multiplier
+
+        pose.pose.position.x = person_pose_base.pose.position.x - math.cos(self.angle) * 0.5
+        pose.pose.position.y = person_pose_base.pose.position.y - math.sin(self.angle) * 0.5
+        pose.pose.position.z = person_pose_base.pose.position.z
+
+
+        pose.pose.position.x, pose.pose.position.y = self.BFS(pose.pose.position.x, pose.pose.position.y)
+
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+
+
+        distance_to_person = np.sqrt(
+            (pose.pose.position.x) ** 2 + (pose.pose.position.y) ** 2
+        )
+        if distance_to_person < 0.4 or distance_to_person > 4:
+            print("Person too close or too far")
+            return
+        
+        try:
+            person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
+        except Exception as e:
+            print(e)
+            rospy.logerr("Failed to transform object pose from body_frame to map_frame")
+            # self.rate.sleep()
+            return
+            # rospy.signal_shutdown("Transformation failed")
+
+        pose = PoseStamped()
+        pose.header.stamp = rospy.Time.now()
+        pose.header.frame_id = "map"
+
+        pose.pose.position.x = person_pose_map.pose.position.x
+        pose.pose.position.y = person_pose_map.pose.position.y
+        pose.pose.position.z = 0
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+
+        # update person positions for map modifications
+        # self.last_person_pos = self.current_person_pos
+        # self.current_person_pos = self.get_position_cell(
+        #     pose.pose.position.x, pose.pose.position.y
+        # )
+
+        print("sending goal")
+        # self.executing_goal = True
+
+        self.person_pose_map_pub.publish(pose)
+
+        self.move_client.cancel_all_goals()
+        goal = MoveBaseGoal()
+        goal.target_pose = pose
+        self.move_client.send_goal(goal)
+
+        self.move_client.wait_for_result(rospy.Duration(3))
+        self.executing_goal = False
+
+
+def pose_publisher_BFS(self, person_pose_odom: PointStamped):
         if self.executing_goal:
             return
 
@@ -298,7 +462,6 @@ class HumanPositionGetter:
 
         self.move_client.wait_for_result(rospy.Duration(3))
         self.executing_goal = False
-
 
 if __name__ == "__main__":
     rospy.init_node("human_pose_getter", anonymous=False)
