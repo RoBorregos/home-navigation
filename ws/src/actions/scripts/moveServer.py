@@ -12,13 +12,13 @@ class MoveServer(object):
     def __init__(self):
         self.scan_data = None
         self.max_range = 0.8
-        self.min_range = 0.35
+        self.min_range = 0.40
         self.x_vel = 0.05
         self.success = True
         self.server = actionlib.SimpleActionServer('moveServer', moveActionAction, self.execute, False)
         self.server.start()
         self.r = rospy.Rate(50)
-        self.scan_sub = rospy.Subscriber('/pc2ls/scan', LaserScan, self.scan_callback, queue_size=1)
+        self.scan_sub = rospy.Subscriber('/dṕ2ls/scan', LaserScan, self.scan_callback, queue_size=1)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         rospy.loginfo('Move server initialized')
 

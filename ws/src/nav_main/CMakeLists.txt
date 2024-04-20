@@ -10,6 +10,7 @@ project(nav_main)
 find_package(catkin REQUIRED COMPONENTS
   ira_laser_tools
   pointcloud_to_laserscan
+  depthimage_to_laserscan
   roscpp
   rospy
   std_msgs

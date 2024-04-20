@@ -33,26 +33,6 @@ rate = None
 count = 0
 #roi_dict = {"Test 1" : {"test1.1": "1.1", "Test1.2":"1.2"}, "Test 2" : {"test2.1": "2.1", "Test2.2":"2.2"}, "Test 3" : {"test3.1": "3.1", "Test3.2":"3.2"}}
 
-def createMsg():
-    poses = []
-    with open(BASE_PATH) as json_file:
-        data = json.load(json_file)
-        for key in data:
-            for subkey in data[key]:
-                newPose = Pose()
-                newPose.position.x = data[key][subkey][0]
-                newPose.position.y = data[key][subkey][1]
-                newPose.position.z = data[key][subkey][2]
-                newPose.orientation.x = data[key][subkey][3]
-                newPose.orientation.y = data[key][subkey][4]
-                newPose.orientation.z = data[key][subkey][5]
-                newPose.orientation.w = data[key][subkey][6]
-
-                poses.append(newPose)
-
-    return poses
-
-
 
 def pose_callback(data):
     global robot_pose, not_moving_marker
@@ -154,8 +134,7 @@ def makeMovingMarker(position):
     int_marker.controls.append(copy.deepcopy(control))
 
     server.insert(int_marker, processFeedback)
-    
-    poses = createMsg()
+
 
 
 def makeArrowMarker( position ):
