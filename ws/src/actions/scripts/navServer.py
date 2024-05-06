@@ -68,13 +68,27 @@ class navigationServer(object):
 
         keys = target.split(" ")
 
-        if (len(keys) <= 1 and keys[0] in self.placesPoses):
-            rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]]['safe_place']}")
-            self.send_goal(self.placesPoses[keys[0]]['safe_place'])
+        if (len(keys) <= 1):
+            if (keys[0] in self.placesPoses):
+                rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]]['safe_place']}")
+                self.send_goal(self.placesPoses[keys[0]]['safe_place'])
+            else: 
+                flag = False
+                for key in self.placesPoses:
+                    if keys[0] in self.placesPoses[key]:
+                        rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]]['safe_place']}")
+                        self.send_goal(self.placesPoses[keys[0]]['safe_place'])
+                        flag = True
+                        break
+                
+                if not flag:
+                    rospy.loginfo("Invalid target")
+                    self._as.set_succeeded(navServResult(result=False))
+                    return
         elif (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
             rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]][keys[1]]}")
-            self.send_goal(self.placesPoses[keys[0]][keys[1]])
-        else :
+            self.send_goal(self.placesPoses[keys[0]][keys[1]])    
+        else: 
             rospy.loginfo("Invalid target")
             self._as.set_succeeded(navServResult(result=False))
             return
