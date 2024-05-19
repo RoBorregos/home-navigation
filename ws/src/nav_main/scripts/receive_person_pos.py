@@ -11,6 +11,7 @@ from nav_msgs.msg import OccupancyGrid
 import numpy as np
 import math
 import actionlib
+from collections import deque
 
 
 class HumanPositionGetter:
@@ -92,8 +93,11 @@ class HumanPositionGetter:
 
     def modify_map(self, map: OccupancyGrid, row, col, value):
         index = self.map_width * row + col
-        
+
         self.map_data[index] = value
+
+    def get_cell_value(self, row, col):
+        return self.map_data[self.map_width * row + col]
 
     def publish_map(self, map: OccupancyGrid):
         map.data = tuple(self.map_data)
@@ -107,19 +111,19 @@ class HumanPositionGetter:
         self.map_origin_x = map.info.origin.position.x
         self.map_origin_y = map.info.origin.position.y
 
-        if self.last_person_pos != (-1, -1):
-            print("removing last person pos")
-            self.set_area_to_value(map, -1, *self.get_area(15, *self.last_person_pos))
+        # if self.last_person_pos != (-1, -1):
+        #     print("removing last person pos")
+        #     self.set_area_to_value(map, -1, *self.get_area(15, *self.last_person_pos))
 
-        self.last_person_pos = (-1, -1)
+        # self.last_person_pos = (-1, -1)
 
-        if self.current_person_pos != (-1, -1):
-            print("adding current person pos")
-            self.set_area_to_value(
-                map, 100, *self.get_area(15, *self.current_person_pos)
-            )
+        # if self.current_person_pos != (-1, -1):
+        #     print("adding current person pos")
+        #     self.set_area_to_value(
+        #         map, 100, *self.get_area(15, *self.current_person_pos)
+        #     )
 
-        self.publish_map(map)
+        # self.publish_map(map)
 
     def get_position_cell(self, x, y):
         y -= self.map_origin_y
@@ -131,6 +135,47 @@ class HumanPositionGetter:
         print(f"get position cell: {row, col}")
 
         return row, col
+
+    def get_cell_coordinates(self, row, col):
+        x = col * self.map_resolution + self.map_origin_x
+        y = row * self.map_resolution + self.map_origin_y
+
+        return x, y
+
+    def is_valid_cell(self, row, col):
+        return self.get_cell_value(row, col) <= 0
+
+    def is_valid_position(self, x, y):
+        return self.is_valid_cell(*self.get_position_cell(x, y))
+
+    def find_valid_position(self, x, y):
+        start_cell = self.get_position_cell(x, y)
+        queue = deque([start_cell])
+        visited = set()
+
+        while queue:
+            row, col = queue.popleft()
+
+            if self.is_valid_cell(row, col):
+                return row, col
+
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    if (i, j) == (0, 0):
+                        continue
+
+                    new_row = row + i
+                    new_col = col + j
+
+                    if self.is_valid_cell(new_row, new_col):
+                        return self.get_cell_coordinates(new_row, new_col)
+                    if (new_row, new_col) in visited:
+                        continue
+
+                    queue.append((new_row, new_col))
+                    visited.add((new_row, new_col))
+
+        return x, y
 
     def get_quaternion_from_euler(self, roll, pitch, yaw):
         """
@@ -161,7 +206,7 @@ class HumanPositionGetter:
 
     def odom_callback(self, robot_pose: Pose):
         # print(f"Robot pose: {robot_pose}")
-        
+
         self.robot_position = np.array(
             [robot_pose.position.x, robot_pose.position.y, robot_pose.position.z]
         )
@@ -189,22 +234,29 @@ class HumanPositionGetter:
             f"pose callback {person_pose_odom.point.x}, {person_pose_odom.point.y}, {person_pose_odom.point.z}"
         )
 
-        pose = PoseStamped()
-        pose.header.stamp = rospy.Time.now()
-        pose.header.frame_id = "base_footprint"
+        person_pose_map = PoseStamped()
+        person_pose_map.header.stamp = rospy.Time.now()
+        person_pose_map.header.frame_id = "map"
+        person_pose_map.pose.position.x = person_pose_odom.point.x
+        person_pose_map.pose.position.y = person_pose_odom.point.y
+        person_pose_map.pose.position.z = person_pose_odom.point.z
 
-        pose.pose.position.x = person_pose_odom.point.x 
-        pose.pose.position.y = person_pose_odom.point.y
-        pose.pose.position.z = person_pose_odom.point.z
+        # pose = PoseStamped()
+        # pose.header.stamp = rospy.Time.now()
+        # pose.header.frame_id = "base_footprint"
 
-        try:
-            person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
-        except Exception as e:
-            print(e)
-            rospy.logerr("Failed to transform object pose from body_frame to map_frame")
-            # self.rate.sleep()
-            return
-            # rospy.signal_shutdown("Transformation failed")
+        # pose.pose.position.x = person_pose_odom.point.x
+        # pose.pose.position.y = person_pose_odom.point.y
+        # pose.pose.position.z = person_pose_odom.point.z
+
+        # try:
+        #     person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
+        # except Exception as e:
+        #     print(e)
+        #     rospy.logerr("Failed to transform object pose from body_frame to map_frame")
+        #     # self.rate.sleep()
+        #     return
+        #     # rospy.signal_shutdown("Transformation failed")
 
         pose = PoseStamped()
         pose.header.stamp = rospy.Time.now()
@@ -227,7 +279,9 @@ class HumanPositionGetter:
         # pose.pose.orientation.w = quat[3]
 
         try:
-            person_pose_base = self.tf_buffer.transform(pose, "base_footprint", rospy.Duration(1))
+            person_pose_base = self.tf_buffer.transform(
+                pose, "base_footprint", rospy.Duration(1)
+            )
         except Exception as e:
             print(e)
             rospy.logerr("Failed to transform object pose from body_frame to map_frame")
@@ -243,7 +297,7 @@ class HumanPositionGetter:
         # pose.pose.position.x *= safe_distance_multiplier
         # pose.pose.position.y *= safe_distance_multiplier
 
-        pose.pose.position.x = person_pose_base.pose.position.x - 0.5
+        pose.pose.position.x = person_pose_base.pose.position.x
         pose.pose.position.y = person_pose_base.pose.position.y
         pose.pose.position.z = person_pose_base.pose.position.z
         pose.pose.orientation.x = quat[0]
@@ -251,14 +305,13 @@ class HumanPositionGetter:
         pose.pose.orientation.z = quat[2]
         pose.pose.orientation.w = quat[3]
 
-
         distance_to_person = np.sqrt(
             (pose.pose.position.x) ** 2 + (pose.pose.position.y) ** 2
         )
-        if distance_to_person < 0.4 or distance_to_person > 4:
-            print("Person too close or too far")
-            return
-        
+        # if distance_to_person < 0.1 or distance_to_person > 4.5:
+        #     print("Person too close or too far")
+        #     return
+
         try:
             person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
         except Exception as e:
@@ -296,7 +349,7 @@ class HumanPositionGetter:
         goal.target_pose = pose
         self.move_client.send_goal(goal)
 
-        self.move_client.wait_for_result(rospy.Duration(3))
+        self.move_client.wait_for_result(rospy.Duration(1))
         self.executing_goal = False
 
 
