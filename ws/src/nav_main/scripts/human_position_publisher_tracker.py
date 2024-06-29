@@ -33,7 +33,7 @@ class HumanPositionPublisher:
             "/person_pose_base", PointStamped, queue_size=5
         )
         self.test_pose_publisher = rospy.Publisher(
-            "/test_person_pose_base", PointStamped, queue_size=5
+            "/test_person_pose_base", PointStamped, queue_size=1
         )
         self.image_subscriber = rospy.Subscriber(
             "/zed2/zed_node/rgb/image_rect_color", Image, self.image_callback
