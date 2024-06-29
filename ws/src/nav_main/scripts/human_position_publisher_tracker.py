@@ -21,6 +21,7 @@ from tf2_geometry_msgs import PointStamped
 from geometry_msgs.msg import Point
 from std_srvs.srv import SetBool
 from frida_navigation_interfaces.srv import SetFollowState
+from frida_manipulation_interfaces.srv import MoveJointSDK
 
 FLT_EPSILON = sys.float_info.epsilon
 
@@ -57,7 +58,7 @@ class HumanPositionPublisher:
             "/change_person_tracker_state", SetBool
         )
         self.person_tracker_subscriber = rospy.Subscriber(
-            "/person_detection", Point, self.person_tracker_callback, queue_size=1
+            "/vision/person_detection", Point, self.person_tracker_callback, queue_size=1
         )
 
         self.cv_image = None
@@ -151,6 +152,17 @@ class HumanPositionPublisher:
             print("Transform lookup failed.")
             return None
 
+    def get_angle(self, x, y):
+        angle = math.atan2(y, x)
+        if angle < 0:
+            angle += 2 * math.pi
+        rospy.loginfo(f"Angle: {angle}")
+        #MoveJointSDS_req = rospy.ServiceProxy("/move_joint_sdk", MoveJointSDK)
+        rospy.loginfo("Degrees: ")
+        rospy.loginfo(math.degrees(angle-math.radians(90)))
+        #MoveJointSDS_req(0, math.degrees(angle-math.radians(90)))
+        return angle
+
     def person_tracker_callback(self, detection: Point):
         if self.cv_image is None or self.camera_info is None:
             print(
@@ -190,6 +202,9 @@ class HumanPositionPublisher:
                 return
 
             self.test_pose_publisher.publish(target_pt)
+            rospy.loginfo(f"Person position: ({target_pt.point.x}, {target_pt.point.y})")
+            
+            self.get_angle(target_pt.point.x, target_pt.point.y)
 
             if target_pt.point.x > 4.5:
                 print("Too far from the robot")
@@ -204,6 +219,8 @@ class HumanPositionPublisher:
                 return
 
             map_point = self.transform_point(target_pt.point, "base_footprint", "map")
+
+            
 
             if (
                 self.person_trajectory

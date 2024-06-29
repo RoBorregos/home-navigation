@@ -48,7 +48,6 @@ class HumanPositionGetter:
         rospy.loginfo("Initializing")
         self.move_client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         self.move_client.wait_for_server()
-        rospy.loginfo("Initializing")
 
         self.odom_subscriber = rospy.Subscriber(
             # Robot_pose when running AMCL and run slam_out_pose when running Hector_Slam
@@ -223,6 +222,7 @@ class HumanPositionGetter:
         self.goal_status = data.status_list
 
     def pose_callback(self, person_pose_odom: PointStamped):
+        print('Executing pose callback')
         if self.executing_goal:
             return
 
