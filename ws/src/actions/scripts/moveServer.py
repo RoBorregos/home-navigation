@@ -106,6 +106,15 @@ class MoveServer(object):
 
             if not DEBUG:
                 self.cmd_vel_pub.publish(cmd_vel)
+
+
+            if min_scanned_distance <= curr_scanned_distance:
+                min_scanned_distance = curr_scanned_distance
+            else:
+                rospy.loginfo('Blocked')
+                self.server.set_aborted()
+                self.success = False
+                return
             #self.server.publish_feedback('Distance to goal: {}'.format(distance))
             self.r.sleep()
     

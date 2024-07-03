@@ -1,5 +1,11 @@
 #goal definition
+uint8 NAV_MODE = -1
+uint8 FORWARD = 0
+uint8 BACKWARD = 1
+uint8 DOOR_SIGNAL = 2
+
 string target_location
+uint8 goal_type = NAV_MODE
 ---
 #result definition
 bool result
