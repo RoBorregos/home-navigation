@@ -194,7 +194,7 @@ def poseFeedback( feedback ):
     context = context.split('-')
     last_key1 = context[0]
     last_key2 = context[1]
-    rospy.loginfo("Insert ROI => ROI Room: " + context[0] + " ROI Place" + context[1] + "\nPOSE: x = {} y = {} z = {}\nORIENTATION: x = {} y = {} z = {} w = {}".format(feedback.pose.position.x, feedback.pose.position.y, 0, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w))   
+    rospy.loginfo("Insert ROI => ROI Room: " + context[0] + " ROI Place: " + context[1] + "\nPOSE: x = {} y = {} z = {}\nORIENTATION: x = {} y = {} z = {} w = {}".format(feedback.pose.position.x, feedback.pose.position.y, 0, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w))   
     savePose(context[0], context[1] , feedback.pose.position.x, feedback.pose.position.y, 0, feedback.pose.orientation.x, feedback.pose.orientation.y, feedback.pose.orientation.z, feedback.pose.orientation.w)
 
 def initDict(config_file):

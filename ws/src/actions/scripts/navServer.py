@@ -13,37 +13,67 @@ import actionlib
 import rospy
 from sensor_msgs.msg import LaserScan
 from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion, Twist
+from geometry_msgs.msg import Pose, PoseStamped, Twist
+import tf2_geometry_msgs
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actions.msg
 from actions.msg import navServAction, navServGoal, navServResult
 import tf2_ros
+from sklearn.linear_model import RANSACRegressor
 
 BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
 DEBUG = False
+
+def euler_from_quaternion(x, y, z, w):
+    """
+    Convert a quaternion into euler angles (roll, pitch, yaw)
+    roll is rotation around x in radians (counterclockwise)
+    pitch is rotation around y in radians (counterclockwise)
+    yaw is rotation around z in radians (counterclockwise)
+    """
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    roll_x = math.atan2(t0, t1)
+
+    t2 = +2.0 * (w * y - z * x)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch_y = math.asin(t2)
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    yaw_z = math.atan2(t3, t4)
+
+    return roll_x, pitch_y, yaw_z
+
 class navigationServer(object):
 
     def __init__(self, name):
         self._action_name = name
         rospy.loginfo(name)
 
+        self.ransac_model = RANSACRegressor()
+
         self.scan_data = None
         self.robot_pose = None
-        self.target_departure = 0.6
-        self.target_approach = 0.25
+        self.target_departure = 1
+        self.target_approach = 0.6
         self.x_vel = 0.05
         self.angular_vel = 0.05
+        self.success = True
 
         rospy.loginfo("Waiting for MoveBase AS...")
         self.move_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-        self.robot_pose_sub = rospy.Subscriber('/robot_pose', PoseStamped, self.robot_pose_callback, queue_size=1)
+        self.robot_pose_sub = rospy.Subscriber('/robot_pose', Pose, self.robot_pose_callback, queue_size=1)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        self.scan_sub = rospy.Subscriber('/oakd/scan', LaserScan, self.scan_callback, queue_size=1)
+
         self.move_client.wait_for_server()
         rospy.loginfo("MoveBase AS Loaded ...")
 
         self.r = rospy.Rate(50)
         self.tf_buffer = tf2_ros.Buffer()
-        self.scan_sub = rospy.Subscriber('/oakd/scan', LaserScan, self.scan_callback, queue_size=1)
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         self.initPlaces()
 
@@ -63,22 +93,25 @@ class navigationServer(object):
             for key in data:
                 self.placesPoses[key] = {}
                 for subkey in data[key]:
-                    self.placesPoses[key][subkey] = Pose(
-                                                        Point(
-                                                            x=data[key][subkey][0], 
-                                                            y=data[key][subkey][1], 
-                                                            z=data[key][subkey][2]), 
-                                                        Quaternion(
-                                                            x=data[key][subkey][3], 
-                                                            y=data[key][subkey][4], 
-                                                            z=data[key][subkey][5], 
-                                                            w=data[key][subkey][6]))
-
+                    if len(data[key][subkey]) == 0:
+                        continue
+                    self.placesPoses[key][subkey] = PoseStamped()
+                    self.placesPoses[key][subkey].header.frame_id = "map"
+                    self.placesPoses[key][subkey].pose.position.x = data[key][subkey][0]
+                    self.placesPoses[key][subkey].pose.position.y = data[key][subkey][1]
+                    self.placesPoses[key][subkey].pose.position.z = data[key][subkey][2]
+                    self.placesPoses[key][subkey].pose.orientation.x = data[key][subkey][3]
+                    self.placesPoses[key][subkey].pose.orientation.y = data[key][subkey][4]
+                    self.placesPoses[key][subkey].pose.orientation.z = data[key][subkey][5]
+                    self.placesPoses[key][subkey].pose.orientation.w = data[key][subkey][6]
     
     def execute_cb(self, goal):
+        print ("Executing goal")
         target = str(goal.target_location)
-        goal_type = str(goal.goal_type)
+        goal_type = goal.goal_type
+        print (goal_type)
         goal_pose = self.get_goal(target)
+        cmd_vel = Twist()
         if (goal_type == goal.NAV_MODE):
             if goal_pose is None:
                 rospy.loginfo("Invalid target")
@@ -92,17 +125,20 @@ class navigationServer(object):
                 rospy.loginfo("Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
 
-            self.move_forward(Twist(), goal_pose)
+            self.move_forward(cmd_vel, goal_pose)
             rospy.loginfo("Robot approached " + target)
-            self._as.set_succeeded(navServResult(result=True))
+            self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.BACKWARD):
-            self.move_backward(Twist())
+            self.move_backward(cmd_vel)
             rospy.loginfo("Robot moved backward")
-            self._as.set_succeeded(navServResult(result=True))
+            self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.DOOR_SIGNAL):
             self.door_signal()
             rospy.loginfo("Detected door signal")
-            self._as.set_succeeded(navServResult(result=True))
+            self._as.set_succeeded(navServResult(result=self.success))
+        else:
+            rospy.loginfo("Invalid goal type")
+            self._as.set_succeeded(navServResult(result=False))
          
 
     def get_goal(self, target : str):
@@ -129,11 +165,8 @@ class navigationServer(object):
 
     def send_goal(self, target_pose):
         goal = MoveBaseGoal()
-        pose_stamped = PoseStamped()
-        pose_stamped.header.stamp = rospy.Time.now()
-        pose_stamped.header.frame_id = "map"
-        pose_stamped.pose = target_pose
-        goal.target_pose = pose_stamped
+        goal.target_pose = target_pose
+        goal.target_pose.header.stamp = rospy.Time.now()
         self.move_client.send_goal(goal)
         self.move_client.wait_for_result()
     
@@ -157,11 +190,93 @@ class navigationServer(object):
         velocity_publisher.publish(vel_msg)
 
     def move_forward(self, cmd_vel : Twist, goal : PoseStamped):
-        goal_pose = self.tf_buffer.transform(goal, 'base_footprint', rospy.Duration(0.1))
+        if self.robot_pose is None or self.scan_data is None:
+            rospy.loginfo("Failed to get robot pose or scan data")
+            self.success = False
+            return
+        # conver goal to a transfor
+        goal_roll, goal_pitch, goal_yaw = euler_from_quaternion(goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w)
+       
+        try:
+            transform = self.tf_buffer.lookup_transform('base_footprint', 'map', rospy.Time())
+        except:
+            rospy.loginfo("Failed to get transform")
+            return
+
+        
         min_scanned_distance = float('inf')
-        solve_angle = False
-        solve_approach = False
+         
         while min_scanned_distance > self.target_approach:
+            try:
+                goal_pose = self.tf_buffer.transform(goal, 'base_footprint', rospy.Duration(2.0))
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+                rospy.loginfo(e)
+                continue
+
+            if self._as.is_preempt_requested() or rospy.is_shutdown():
+                rospy.loginfo('Preempted')
+                self.success = False
+                return
+            
+            curr_scanned_distance = float('inf') 
+            x_distance = []
+            y_distance = []
+            for inx, data in enumerate(self.scan_data.ranges):
+                if data == float('inf'):
+                    continue
+
+                ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                x_distance.append(data * math.sin(ray_angle))
+                y_distance.append(data * math.cos
+                                  (ray_angle))
+
+            # Fit the RANSAC model
+            x_distance = numpy.array(x_distance).reshape(-1, 1)
+            y_distance = numpy.array(y_distance).reshape(-1, 1)
+            self.ransac_model.fit(x_distance, y_distance)
+
+            # Get curr distance in the x axis
+            print (x_distance, y_distance)
+
+            curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]
+                        
+            angle = math.atan2(goal_pose.pose.position.y, goal_pose.pose.position.x)
+            #robot_roll, robot_pitch, robot_yaw = euler_from_quaternion(self.robot_pose.orientation.x, self.robot_pose.orientation.y, self.robot_pose.orientation.z, self.robot_pose.orientation.w)
+            
+            error_angle_left = angle
+            error_angle_right = error_angle_left - 2 * math.pi if error_angle_left > 0 else error_angle_left + 2 * math.pi
+
+            error_angle = error_angle_left if abs(error_angle_left) < abs(error_angle_right) else error_angle_right 
+
+            if abs(error_angle) > 0.1:
+                cmd_vel.angular.z = self.angular_vel * (error_angle / abs(error_angle))
+                cmd_vel.linear.x = 0
+            else:
+                cmd_vel.linear.x = self.x_vel
+                cmd_vel.angular.z = 0                
+
+            if not DEBUG:
+                self.cmd_vel_pub.publish(cmd_vel)
+
+            rospy.loginfo('Scanned distance: {} Error angle: {}'.format(curr_scanned_distance, error_angle))
+
+            min_scanned_distance = curr_scanned_distance
+            # if min_scanned_distance <= curr_scanned_distance:
+            #     min_scanned_distance = curr_scanned_distance
+            # else:
+            #     rospy.loginfo('Blocked')
+            #     self.success = False
+            #     return
+            #self._as.publish_feedback('Distance to goal: {}'.format(distance))
+            self.r.sleep()
+
+        # Adjust to the goal's orientation
+        robot_roll, robot_pitch, robot_yaw = euler_from_quaternion(self.robot_pose.orientation.x, self.robot_pose.orientation.y, self.robot_pose.orientation.z, self.robot_pose.orientation.w)
+        error_angle_left = goal_yaw - robot_yaw
+        error_angle_right = error_angle_left - 2 * math.pi if error_angle_left > 0 else error_angle_left + 2 * math.pi
+        error_angle = error_angle_left if abs(error_angle_left) < abs(error_angle_right) else error_angle_right 
+
+        while abs(error_angle) > 0.1:
             if self._as.is_preempt_requested() or rospy.is_shutdown():
                 rospy.loginfo('Preempted')
                 self._as.set_preeumpted()
@@ -169,49 +284,24 @@ class navigationServer(object):
                 self._as.set_aborted()
                 return
             
-            curr_scanned_distance = float('inf') 
-
-            for i in range(self.init_index, self.end_index):
-                if self.scan_data.ranges[i] == float('inf'):
-                    continue
-                curr_scanned_distance = min(curr_scanned_distance, self.scan_data.ranges[i])
+            cmd_vel.angular.z = self.angular_vel * (error_angle / abs(error_angle))
+            cmd_vel.linear.x = 0
+            rospy.loginfo('Error angle: {}'.format(error_angle))
+            robot_roll, robot_pitch, robot_yaw = euler_from_quaternion(self.robot_pose.orientation.x, self.robot_pose.orientation.y, self.robot_pose.orientation.z, self.robot_pose.orientation.w)
+            error_angle_left = goal_yaw - robot_yaw
+            error_angle_right = error_angle_left - 2 * math.pi if error_angle_left > 0 else error_angle_left + 2 * math.pi
+            error_angle = error_angle_left if abs(error_angle_left) < abs(error_angle_right) else error_angle_right 
             
-            rospy.loginfo('Scanned distance: {}'.format(curr_scanned_distance))
-
-            if not solve_angle:
-                angle = math.atan2(goal_pose.pose.position.y - self.robot_pose.pose.position.y, goal_pose.pose.position.x - self.robot_pose.pose.position.x)
-                
-                if abs(angle - self.robot_pose.pose.orientation.z) > 5:
-                    cmd_vel.angular.z = self.angular_vel if angle > self.robot_pose.pose.orientation.z else -self.angular_vel
-                else:
-                    cmd_vel.angular.z = 0
-                    solve_angle = True
-            elif not solve_approach:
-                distance = math.sqrt((goal_pose.pose.position.x - self.robot_pose.pose.position.x) ** 2 + (goal_pose.pose.position.y - self.robot_pose.pose.position.y) ** 2)
-                if distance > 0.05:
-                    cmd_vel.linear.x = self.x_vel
-                else:
-                    cmd_vel.linear.x = 0
-                    solve_approach = True
-
-
             if not DEBUG:
                 self.cmd_vel_pub.publish(cmd_vel)
-
-
-            if min_scanned_distance <= curr_scanned_distance:
-                min_scanned_distance = curr_scanned_distance
-            else:
-                rospy.loginfo('Blocked')
-                self._as.set_aborted()
-                self.success = False
-                return
-            #self._as.publish_feedback('Distance to goal: {}'.format(distance))
+            
             self.r.sleep()
+
+
     
     # REDO THIS FUNCTION
     def move_backward(self, cmd_vel):
-        min_scanned_distance = self.min_range
+        min_scanned_distance = self.target_approach
 
         while True:
             min_scanned_distance = float('inf')
@@ -237,7 +327,7 @@ class navigationServer(object):
             #self._as.publish_feedback('Max distance: {}'.format(max_distance))
             self.r.sleep()
 
-            if min_scanned_distance >= self.max_range:
+            if min_scanned_distance >= self.target_departure:
                 break
         
         #self._as.publish_feedback("Achieved max distance")
@@ -272,11 +362,9 @@ class navigationServer(object):
             self.r.sleep()
 
     def scan_callback(self, data):
-        rospy.loginfo('Scan data received')
         self.scan_data = data
 
     def robot_pose_callback(self, data):
-        rospy.loginfo('Robot pose received')
         self.robot_pose = data
 
 if __name__ == '__main__':

@@ -43,6 +43,8 @@ class NavClient(object):
             data = json.load(json_file)
             for key in data:
                 for subkey in data[key]:
+                    if len (data[key][subkey]) == 0:
+                        continue
                     msg += f"{count}. {key} {subkey}\n"
                     self.MoveGoals[count] = key + " " + subkey
                     count += 1
@@ -72,7 +74,7 @@ class NavClient(object):
 
         rospy.loginfo("Sending Nav Goal")
         self.client.send_goal(
-                    navServGoal(target_location = NavGoalScope.target_location),
+                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.FORWARD),
                     feedback_cb=nav_goal_feedback,
                     done_cb=get_result_callback)
         

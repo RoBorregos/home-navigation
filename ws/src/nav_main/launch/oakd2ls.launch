@@ -2,7 +2,7 @@
 
 <launch>
     <arg name="scanner" default="oakd" />
-    <arg name="cloud" default="" />
+    <arg name="cloud" default="/stereo_inertial_publisher/stereo/points" />
     <arg name="scan_frequency" default="15"/>
     <remap from="cloud_in" to="$(arg cloud)"/>
     <remap from="scan" to="$(arg scanner)/scan"/>
@@ -19,7 +19,7 @@
             angle_max: 3.14 # M_PI/2
             angle_increment: 0.0087 # M_PI/360.0
             scan_time: 1/$(arg scan_frequency)
-            range_min: 0.15
+            range_min: 0.4
             range_max: 4.0
             use_inf: true
             inf_epsilon: 1.0
