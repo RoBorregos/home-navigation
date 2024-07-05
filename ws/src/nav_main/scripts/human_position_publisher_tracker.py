@@ -21,7 +21,7 @@ from tf2_geometry_msgs import PointStamped
 from geometry_msgs.msg import Point
 from std_srvs.srv import SetBool
 from frida_navigation_interfaces.srv import SetFollowState
-from frida_manipulation_interfaces.srv import MoveJointSDK
+import os
 
 FLT_EPSILON = sys.float_info.epsilon
 
@@ -33,7 +33,7 @@ class HumanPositionPublisher:
             "/person_pose_base", PointStamped, queue_size=5
         )
         self.test_pose_publisher = rospy.Publisher(
-            "/test_person_pose_base", PointStamped, queue_size=1
+            "/test_person_pose_base", PointStamped, queue_size=5
         )
         self.image_subscriber = rospy.Subscriber(
             "/zed2/zed_node/rgb/image_rect_color", Image, self.image_callback
@@ -129,7 +129,7 @@ class HumanPositionPublisher:
         )
 
     def is_valid_position(self, person_position, position):
-        return self.distance(person_position, position) > 0.5
+        return self.distance(person_position, position) > 0.2
 
     def get_valid_position(self, person_position):
         for i in range(len(self.person_trajectory)):
@@ -151,30 +151,27 @@ class HumanPositionPublisher:
         except tf2_ros.LookupException:
             print("Transform lookup failed.")
             return None
-
-    def get_angle(self, x, y):
-        angle = math.atan2(y, x)
-        if angle < 0:
-            angle += 2 * math.pi
-        rospy.loginfo(f"Angle: {angle}")
-        #MoveJointSDS_req = rospy.ServiceProxy("/move_joint_sdk", MoveJointSDK)
-        rospy.loginfo("Degrees: ")
-        rospy.loginfo(math.degrees(angle-math.radians(90)))
-        #MoveJointSDS_req(0, math.degrees(angle-math.radians(90)))
-        return angle
+        
+    def clear_terminal():
+        os.system('clear')
 
     def person_tracker_callback(self, detection: Point):
+        print("Received person track, transforming")
         if self.cv_image is None or self.camera_info is None:
             print(
                 f"Follow person: {self.follow_person}, cv_image: {self.cv_image is None}, camera_info: {self.camera_info is None}"
             )
             return
 
-        self.x, self.y = int(detection.x), int(detection.y)
-
+        self.x, self.y = detection.x, detection.y
+        #print(f"Person position: ({self.x}, {self.y})")
         point3D = Point()
         point2D = [self.x, self.y]
         if len(self.depth_image) != 0:
+            print(f"Width: {self.cv_image.width}, Height: {self.cv_image.height}")
+            point2D[0] = int(point2D[0] * self.cv_image.width)
+            point2D[1] = int(point2D[1] * self.cv_image.height)
+            print(f"Point2D: ({point2D[0]}, {point2D[1]})")
             depth = self.get_depth(self.depth_image, point2D)
             point3D_ = self.deproject_pixel_to_point(self.camera_info, point2D, depth)
             point3D.x = point3D_[0]
@@ -202,37 +199,39 @@ class HumanPositionPublisher:
                 return
 
             self.test_pose_publisher.publish(target_pt)
-            rospy.loginfo(f"Person position: ({target_pt.point.x}, {target_pt.point.y})")
-            
-            self.get_angle(target_pt.point.x, target_pt.point.y)
+            print("Target point")
+            print(target_pt)
 
-            if target_pt.point.x > 4.5:
+            robot_distance = math.sqrt(target_pt.point.x ** 2 + target_pt.point.y ** 2)
+            if abs(robot_distance) > 4.5:
                 print("Too far from the robot")
                 return
 
-            print(f"Person position: ({target_pt.point.x}, {target_pt.point.y})")
-            if target_pt.point.x < 0.8:
+            #print(f"Person position: ({target_pt.point.x}, {target_pt.point.y})")
+            if abs(robot_distance) < 0.8:
                 print(f"Too close to the robot, {self.stop_on_reached}")
                 if self.stop_on_reached:
                     self.change_person_tracker_state(False)
                     self.stop_on_reached = False
                 return
-
-            map_point = self.transform_point(target_pt.point, "base_footprint", "map")
-
             
+            map_point = self.transform_point(target_pt.point, "base_footprint", "map")
+            print("Map point")
+            print(map_point)
 
-            if (
-                self.person_trajectory
-                and self.distance(self.person_trajectory[-1], map_point) < 0.1
-            ):
-                print("Person not moving")
-                return
+            # if (
+            #     self.person_trajectory
+            #     and self.distance(self.person_trajectory[-1], map_point) < 0.1
+            # ):
+            #     print("Person not moving")
+            #     return
 
             self.person_trajectory.append(map_point)
             if len(self.person_trajectory) > 10:
                 self.person_trajectory.pop(0)
 
+            print("map point 2")
+            print(map_point)
             map_point = self.get_valid_position(map_point)
 
             if map_point is None:

@@ -14,7 +14,7 @@ import time
 import rospy
 from threading import Lock
 from tf2_geometry_msgs import PointStamped, PoseStamped
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, Twist
 from frida_manipulation_interfaces.srv import MoveJointSDK, MoveVeloJointSDK
 from sensor_msgs.msg import JointState
 
@@ -30,8 +30,45 @@ class ArmRotation:
         self.rotation_velocity_service = rospy.ServiceProxy('/move_joint_velocity_sdk', MoveVeloJointSDK)
         self.person_position_sub = rospy.Subscriber('/test_person_pose_base', PointStamped, self.person_position_callback, queue_size=1)
         self.arm_joint_angle_sub = rospy.Subscriber('/xarm/joint_states', JointState, self.arm_joint_angle_callback)
+        self.person_detection_box = rospy.Subscriber('/vision/person_detection', Point, self.person_detection_box_callback, queue_size=1)
+        self.base_angular_velocity = rospy.Subscriber('/cmd_vel', Twist, self.base_angular_velocity_callback, queue_size=1)
         self.person_point = PointStamped()
         self.angle_buffer = []
+        self.base_ang_vel = 0
+
+    def base_angular_velocity_callback(self, msg: Twist):
+        self.base_ang_vel = msg.angular.z
+
+
+    def person_detection_box_callback(self, msg: Point):
+        x_pos = msg.x
+        normalized_x_pos = (x_pos - 0.5) * 2
+        KP = -0.6
+        MAX_ANGULAR_VELOCITY = 0.8
+        MAX_ERROR = 0.2
+        angle_vel = normalized_x_pos * KP
+        if angle_vel > MAX_ANGULAR_VELOCITY:
+            angle_vel = MAX_ANGULAR_VELOCITY
+        elif angle_vel < -MAX_ANGULAR_VELOCITY:
+            angle_vel = -MAX_ANGULAR_VELOCITY
+        error = normalized_x_pos
+        cmd_vel_sign = np.sign(self.base_ang_vel)
+        angle_vel_sign = np.sign(angle_vel)
+        if cmd_vel_sign == angle_vel_sign:
+            angle_vel = 0
+        if(fabs(error) > MAX_ERROR):
+            rospy.loginfo("Sending velocity command")
+            rospy.loginfo(angle_vel)
+            self.rotation_velocity_service(0, angle_vel)
+        else:
+            rospy.loginfo("Not sending velocity command")
+            rospy.loginfo(angle_vel)
+            #pass
+            self.rotation_velocity_service(0, 0)
+        #rospy.loginfo(angle_vel)
+        time.sleep(0.1)
+        #print(angle_vel)
+
 
     def arm_joint_angle_callback(self, msg: JointState):
         self.arm_angle = msg.position[0]
@@ -40,14 +77,15 @@ class ArmRotation:
         self.person_point = msg
         self.person_angle = self.get_angle(msg.point.x, msg.point.y)
         angular_velocity = self.get_angular_velocity(self.arm_angle, self.person_angle)
-        rospy.loginfo(f"Person Angle: {self.from_minus_pi_to_pi(self.person_angle)}")
-        rospy.loginfo(f"Arm Angle: {self.from_minus_pi_to_pi(self.arm_angle)}")
+        #rospy.loginfo(f"Person Angle: {self.from_minus_pi_to_pi(self.person_angle)}")
+        #rospy.loginfo(f"Arm Angle: {self.from_minus_pi_to_pi(self.arm_angle)}")
         #rospy.loginfo(f"Angular Velocity: {angular_velocity}")
         #self.move_arm_with_velocity(angular_velocity)
-        angle = self.moving_average(self.person_angle)
+        angle = self.moving_median(self.person_angle)
+        #rospy.loginfo(angle)
         if angle is not None:
             self.move_arm(angle)
-        #self.move_arm()
+            
 
     def moving_average(self, angle):
         self.angle_buffer.append(angle)
@@ -55,14 +93,51 @@ class ArmRotation:
             self.angle_buffer.pop(0)
             return np.mean(self.angle_buffer)
         else:
+            return None
+
+    def moving_median(self, angle):
+        self.angle_buffer.append(angle)
+        if len(self.angle_buffer) >3:
+            self.angle_buffer.pop(0)
+            return np.median(self.angle_buffer)
+        else:
             return None   
 
-    def move_arm(self,angle):
-        try:
-            self.rotation_service(0, math.degrees(self.from_minus_pi_to_pi(angle)))
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
-    
+    def move_arm(self, angle):
+        if angle is not None:
+            try:
+                # Normalize the angle to -pi to pi range
+                normalized_angle = self.from_minus_pi_to_pi(angle)
+                
+                # Calculate the shortest angular distance considering wrap-around
+                diff = normalized_angle - self.arm_angle
+                
+                # Ensure diff is within -pi to pi range
+                if(normalized_angle%math.pi == 0):
+                    normalized_angle = normalized_angle + 0.001
+                if diff > math.pi:
+                    diff -= 2 * math.pi
+                elif diff < -math.pi:
+                    diff += 2 * math.pi
+                
+                # Calculate the target angle to move to
+                target_angle = self.arm_angle + diff
+                #rospy.loginfo(target_angle)
+                #rospy.loginfo(target_angle)
+                # Move the arm to the target angle
+                if(abs(self.arm_angle - target_angle) > 0.4):
+                    #self.rotation_service(0, math.degrees(target_angle),0.8,0.4)
+                    #rospy.loginfo(abs(self.arm_angle - target_angle))
+                    pass
+
+                else:
+                    pass
+                    #rospy.loginfo("Arm is already at the target angle")
+                #rospy.loginfo(target_angle)   
+
+            except rospy.ServiceException as e:
+                pass            
+
     def limit_angular_velocity(self, angular_velocity):
         max_angular_velocity = 0.2
         if angular_velocity > max_angular_velocity:
@@ -95,9 +170,7 @@ class ArmRotation:
         return angle
 
     def get_angle(self, x, y):
-        angle = math.atan2(y, x)
-        if angle < 0:
-            angle += 2 * math.pi
+        angle = math.atan2(y, x)    
         corrected_angle = math.degrees(angle - math.radians(90))
         return math.radians(corrected_angle)
 
@@ -121,7 +194,8 @@ class ArmRotation:
             self.rotation_service(0, math.degrees(self.from_minus_pi_to_pi(self.person_angle)))
             #self.rotation_velocity_service(0, angular_velocity)
         except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+            pass
+            #rospy.logerr(f"Service call failed: {e}")
 
 
 if __name__ == "__main__":
@@ -133,4 +207,3 @@ if __name__ == "__main__":
     
     
         
-
