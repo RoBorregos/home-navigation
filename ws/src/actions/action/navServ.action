@@ -6,6 +6,7 @@ uint8 DOOR_SIGNAL = 3
 
 string target_location
 uint8 goal_type
+geometry_msgs/PoseStamped target_pose
 ---
 #result definition
 bool result

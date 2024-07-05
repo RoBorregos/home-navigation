@@ -106,45 +106,41 @@ class navigationServer(object):
                     self.placesPoses[key][subkey].pose.orientation.w = data[key][subkey][6]
     
     def execute_cb(self, goal):
-        print ("Executing goal")
+        rospy.loginfo("[INFO] Executing goal")
         target = str(goal.target_location)
         goal_type = goal.goal_type
-        print (goal_type)
-        goal_pose = self.get_goal(target)
+        goal_pose = self.get_goal(target) if target != "" else goal.target_pose
         cmd_vel = Twist()
         if (goal_type == goal.NAV_MODE):
             if goal_pose is None:
-                rospy.loginfo("Invalid target")
+                rospy.loginfo("[ERROR] Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
             
             self.send_goal(goal_pose)
-            rospy.loginfo("Robot Moving Towards " + target)
+            rospy.loginfo("[INFO] Robot Moving Towards " + target if target != "" else goal.target_pose)
             self._as.set_succeeded(navServResult(result=True))
         elif (goal_type == goal.FORWARD):
             if goal_pose is None:
-                rospy.loginfo("Invalid target")
+                rospy.loginfo("[ERROR] Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
 
             self.move_forward(cmd_vel, goal_pose)
-            rospy.loginfo("Robot approached " + target)
+            rospy.loginfo("[INFO] Robot approached " + target)
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.BACKWARD):
             self.move_backward(cmd_vel)
-            rospy.loginfo("Robot moved backward")
+            rospy.loginfo("[INFO] Robot moved backward")
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.DOOR_SIGNAL):
             self.door_signal()
-            rospy.loginfo("Detected door signal")
+            rospy.loginfo("[INFO] Detected door signal")
             self._as.set_succeeded(navServResult(result=self.success))
         else:
-            rospy.loginfo("Invalid goal type")
+            rospy.loginfo("[ERROR] Invalid goal type")
             self._as.set_succeeded(navServResult(result=False))
          
 
     def get_goal(self, target : str):
-        if (target == ""):
-            return None
-
         keys = target.split(" ")
 
         if (len(keys) <= 1):

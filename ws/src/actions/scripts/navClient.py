@@ -32,8 +32,8 @@ class NavClient(object):
             if x == 0 or x > count:
                 break
 
-            rospy.loginfo(f"Moving to {self.MoveGoals[x]}")
-            self.nav_goal(self.MoveGoals[x])
+            #rospy.loginfo(f"Moving to {self.MoveGoals[x]}")
+            self.nav_goal(self.MoveGoals[x] if x in self.MoveGoals else "")
 
     def createMsg(self):
         self.MoveGoals = {}
@@ -52,10 +52,6 @@ class NavClient(object):
         return msg, count
 
     def nav_goal(self, target):
-        if target == "":
-            rospy.loginfo("Invalid target")
-            return False
-        
         class NavGoalScope:
             target_location = target
             result = False
@@ -74,7 +70,7 @@ class NavClient(object):
 
         rospy.loginfo("Sending Nav Goal")
         self.client.send_goal(
-                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.FORWARD),
+                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.NAV_MODE,  target_pose = NavGoalScope.pose),
                     feedback_cb=nav_goal_feedback,
                     done_cb=get_result_callback)
         
