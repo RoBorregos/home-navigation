@@ -34,8 +34,10 @@ class HumanPositionGetter:
         self.current_person_pos = (-1, -1)
         self.last_person_pos = (-1, -1)
         self.map_data = []
+        
+        self.poses_buffer = deque(maxlen=5)
 
-        self.executing_goal = False
+        self.executing_goal = False 
         self.robot_position = None
 
         # self.modified_map_publisher = rospy.Publisher(
@@ -221,6 +223,14 @@ class HumanPositionGetter:
     def goal_callback(self, data):
         self.goal_status = data.status_list
 
+    def moving_average(self, angle):
+        self.angle_buffer.append(angle)
+        if len(self.angle_buffer) > 5:
+            self.angle_buffer.pop(0)
+            return np.mean(self.angle_buffer)
+        else:
+            return None
+
     def pose_callback(self, person_pose_odom: PointStamped):
         print('Executing pose callback')
         if self.executing_goal:
@@ -339,8 +349,12 @@ class HumanPositionGetter:
         #     pose.pose.position.x, pose.pose.position.y
         # )
 
+
+
         print("sending goal")
         # self.executing_goal = True
+
+        self.poses_buffer.append(pose)
 
         self.person_pose_map_pub.publish(pose)
 
