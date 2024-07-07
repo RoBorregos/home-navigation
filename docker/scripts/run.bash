@@ -17,6 +17,7 @@ if [[ "$@" == *"--net "* ]]; then
     DOCKER_NETWORK_ARGS=""
 fi
 
+CONTAINER_NAME="nav"
 VOLUME_COMMANDS=""
 for i in "$@"
 do
@@ -43,23 +44,22 @@ case $i in
     fi
     shift # past argument=value
     ;;
+    --xavier)
+    IMAGE_NAME="nav-xavier"
+    shift # past argument with no value
+    ;;
+    --mediapipe)
+    IMAGE_NAME="nav-mediapipe"
+    shift # past argument with no value
+    ;;
     *)
           # unknown option
     ;;
 esac
 done
 
-USER_HOSTNAME_ARGS=""
-
-ip=$(hostname -I | grep -o '192\.168\.31\.[0-9]\+')
-
-if [ $HOSTNAME != "nano" ] && [ $HOSTNAME != "rbrgs" ] && [ ip != "" ]; then
-    USER_HOSTNAME_ARGS="--add-host $HOSTNAME:$ip"
-fi
-
 IMAGE_NAME="nav"
 
-CONTAINER_NAME="nav"
 
 echo "Container name: $CONTAINER_NAME"
 echo "Volumes to mount: $VOLUME_COMMANDS"
@@ -72,7 +72,6 @@ $DOCKER_COMMAND -it -d\
     $DOCKER_SSH_AUTH_ARGS \
     $DOCKER_NETWORK_ARGS \
     $ADDITIONAL_COMMANDS \
-    $USER_HOSTNAME_ARGS \
     --add-host nano:192.168.31.123 \
     --add-host rbrgs:192.168.31.23 \
     --privileged \
@@ -82,7 +81,7 @@ $DOCKER_COMMAND -it -d\
     -v /dev:/dev \
     --device /dev/video0:/dev/video0 \
     $VOLUME_COMMANDS \
-    -w /workspace \
+    -w /workspace/ws \
     --name=$CONTAINER_NAME \
     $IMAGE_NAME \
     bash
