@@ -1,0 +1,4 @@
+<launch>
+    <node name="moveServer" pkg="actions" type="moveServer.py" output="screen" />
+    <node name="moveClient" pkg="actions" type="moveClient.py" output="screen" />
+</launch>

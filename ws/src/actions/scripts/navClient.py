@@ -2,7 +2,7 @@
 import json
 import rospy
 import actionlib
-from actions.msg import navServAction, navServGoal
+from frida_navigation_interfaces.msg import navServAction, navServGoal
 from geometry_msgs.msg import PoseStamped
 from enum import Enum
 import pathlib
@@ -32,8 +32,8 @@ class NavClient(object):
             if x == 0 or x > count:
                 break
 
-            rospy.loginfo(f"Moving to {self.MoveGoals[x]}")
-            self.nav_goal(self.MoveGoals[x])
+            #rospy.loginfo(f"Moving to {self.MoveGoals[x]}")
+            self.nav_goal(self.MoveGoals[x] if x in self.MoveGoals else "")
 
     def createMsg(self):
         self.MoveGoals = {}
@@ -43,6 +43,8 @@ class NavClient(object):
             data = json.load(json_file)
             for key in data:
                 for subkey in data[key]:
+                    if len (data[key][subkey]) == 0:
+                        continue
                     msg += f"{count}. {key} {subkey}\n"
                     self.MoveGoals[count] = key + " " + subkey
                     count += 1
@@ -50,10 +52,6 @@ class NavClient(object):
         return msg, count
 
     def nav_goal(self, target):
-        if target == "":
-            rospy.loginfo("Invalid target")
-            return False
-        
         class NavGoalScope:
             target_location = target
             result = False
@@ -72,7 +70,7 @@ class NavClient(object):
 
         rospy.loginfo("Sending Nav Goal")
         self.client.send_goal(
-                    navServGoal(target_location = NavGoalScope.target_location),
+                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.BACKWARD,  target_pose = NavGoalScope.pose),
                     feedback_cb=nav_goal_feedback,
                     done_cb=get_result_callback)
         
