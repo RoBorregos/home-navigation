@@ -1,10 +1,13 @@
 #! /usr/bin/env python3
-
+import json
 import rospy
 import actionlib
-from actions.msg import navServAction, navServGoal
+from frida_navigation_interfaces.msg import navServAction, navServGoal
 from geometry_msgs.msg import PoseStamped
 from enum import Enum
+import pathlib
+
+BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
 
 def handleIntInput(msg_ = "", range=(0, 10)):
     x = -1
@@ -16,32 +19,41 @@ def handleIntInput(msg_ = "", range=(0, 10)):
             if x and x.isnumeric():
                 break
         x = int(x)
-    return x
-
-class MoveGoals(Enum):
-    KITCHEN = 1
-    COUCH = 2
-    BATHROOM = 3
-    CLOSET = 4
+    return 
 
 class NavClient(object):
     
     def __init__(self):
         self.client = actionlib.SimpleActionClient('navServer', navServAction)
         self.client.wait_for_server()
-
+        msg, count = self.createMsg()
         while True:
-            x = handleIntInput(
-                msg_ = "1. Kitchen  \n 2. Couch  \n 3. Bathroom  \n 4. Closet  \n 0. Exit",
-                range=(0, 4)
-            )
-            if x == 0:
+            x = int(input(msg + "0. Exit\n"))
+            if x == 0 or x > count:
                 break
-            self.nav_goal(MoveGoals(x))
 
-    def nav_goal(self, target = MoveGoals.KITCHEN):
+            #rospy.loginfo(f"Moving to {self.MoveGoals[x]}")
+            self.nav_goal(self.MoveGoals[x] if x in self.MoveGoals else "")
+
+    def createMsg(self):
+        self.MoveGoals = {}
+        count = 1
+        msg = ""
+        with open(BASE_PATH + '/areas.json') as json_file:
+            data = json.load(json_file)
+            for key in data:
+                for subkey in data[key]:
+                    if len (data[key][subkey]) == 0:
+                        continue
+                    msg += f"{count}. {key} {subkey}\n"
+                    self.MoveGoals[count] = key + " " + subkey
+                    count += 1
+        
+        return msg, count
+
+    def nav_goal(self, target):
         class NavGoalScope:
-            target_location = target.name
+            target_location = target
             result = False
             pose = PoseStamped()
             
@@ -58,7 +70,7 @@ class NavClient(object):
 
         rospy.loginfo("Sending Nav Goal")
         self.client.send_goal(
-                    navServGoal(target_location = NavGoalScope.target_location),
+                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.BACKWARD,  target_pose = NavGoalScope.pose),
                     feedback_cb=nav_goal_feedback,
                     done_cb=get_result_callback)
         
@@ -71,6 +83,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('NavGoalClient', anonymous=True)
         rospy.loginfo("NavGoalClient initialized.")
+        rospy.loginfo(BASE_PATH)
         NavClient()
 
     except rospy.ROSInterruptException:
