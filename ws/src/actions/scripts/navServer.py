@@ -16,8 +16,7 @@ from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, PoseStamped, Twist
 import tf2_geometry_msgs
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-import actions.msg
-from actions.msg import navServAction, navServGoal, navServResult
+from frida_navigation_interfaces.msg import navServAction, navServGoal, navServResult
 import tf2_ros
 from sklearn.linear_model import RANSACRegressor
 
@@ -57,16 +56,18 @@ class navigationServer(object):
         self.scan_data = None
         self.robot_pose = None
         self.target_departure = 1
-        self.target_approach = 0.6
+        self.target_approach = 0.5
         self.x_vel = 0.05
         self.angular_vel = 0.05
         self.success = True
-
+        self.scan_topic = rospy.get_param('~scanner', '/zed2/scan')
+        rospy.loginfo("Scanner topic: " + self.scan_topic)
         rospy.loginfo("Waiting for MoveBase AS...")
+        
         self.move_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.robot_pose_sub = rospy.Subscriber('/robot_pose', Pose, self.robot_pose_callback, queue_size=1)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-        self.scan_sub = rospy.Subscriber('/oakd/scan', LaserScan, self.scan_callback, queue_size=1)
+        self.scan_sub = rospy.Subscriber(self.scan_topic, LaserScan, self.scan_callback, queue_size=1)
 
         self.move_client.wait_for_server()
         rospy.loginfo("MoveBase AS Loaded ...")
@@ -78,7 +79,7 @@ class navigationServer(object):
         self.initPlaces()
 
         # Initialize Navigation Action Server
-        self._as = actionlib.SimpleActionServer(self._action_name, actions.msg.navServAction, execute_cb=self.execute_cb, auto_start = False)
+        self._as = actionlib.SimpleActionServer(self._action_name, navServAction, execute_cb=self.execute_cb, auto_start = False)
         self._as.start()
     
 
@@ -187,7 +188,10 @@ class navigationServer(object):
 
     def move_forward(self, cmd_vel : Twist, goal : PoseStamped):
         if self.robot_pose is None or self.scan_data is None:
-            rospy.loginfo("Failed to get robot pose or scan data")
+            if self.robot_pose is None:
+                rospy.loginfo("Failed to get robot pose")
+            if self.scan_data is None:
+                rospy.loginfo("Failed to get scan data")
             self.success = False
             return
         # conver goal to a transfor
@@ -293,39 +297,59 @@ class navigationServer(object):
             
             self.r.sleep()
 
+        self.success = True
+
 
     
     # REDO THIS FUNCTION
     def move_backward(self, cmd_vel):
+        if self.robot_pose is None or self.scan_data is None:
+            if self.robot_pose is None:
+                rospy.loginfo("Failed to get robot pose")
+            if self.scan_data is None:
+                rospy.loginfo("Failed to get scan data")
+            self.success = False
+            return
+        
         min_scanned_distance = self.target_approach
 
-        while True:
-            min_scanned_distance = float('inf')
-            
+        while min_scanned_distance < self.target_departure:
             if self._as.is_preempt_requested() or rospy.is_shutdown():
                 rospy.loginfo('Preempted')
-                self._as.set_preempted()
                 self.success = False
-                self._as.set_aborted()
                 return
             
-            if not DEBUG:
-                cmd_vel.linear.x = -self.x_vel
-                self.cmd_vel_pub.publish(cmd_vel)
-
-            for i in range(self.init_index, self.end_index):
-                if self.scan_data.ranges[i] == float('inf'):
+            curr_scanned_distance = float('inf') 
+            x_distance = []
+            y_distance = []
+            for inx, data in enumerate(self.scan_data.ranges):
+                if data == float('inf'):
                     continue
 
-                min_scanned_distance = min(min_scanned_distance, self.scan_data.ranges[i])
-            
-            rospy.loginfo('Max distance: {}'.format(min_scanned_distance))
-            #self._as.publish_feedback('Max distance: {}'.format(max_distance))
-            self.r.sleep()
+                ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                x_distance.append(data * math.sin(ray_angle))
+                y_distance.append(data * math.cos
+                                  (ray_angle))
 
-            if min_scanned_distance >= self.target_departure:
-                break
+            # Fit the RANSAC model
+            x_distance = numpy.array(x_distance).reshape(-1, 1)
+            y_distance = numpy.array(y_distance).reshape(-1, 1)
+            self.ransac_model.fit(x_distance, y_distance)
+
+            # Get curr distance in the x axis
+            print (x_distance, y_distance)
+
+            curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]
+              
+            cmd_vel.linear.x = -self.x_vel
+            cmd_vel.angular.z = 0                
+
+            if not DEBUG:
+                self.cmd_vel_pub.publish(cmd_vel)
         
+            min_scanned_distance = curr_scanned_distance
+        
+        self.success = True
         #self._as.publish_feedback("Achieved max distance")
 
     def door_signal(self):
