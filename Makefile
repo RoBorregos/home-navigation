@@ -8,6 +8,7 @@ nav.build.mediapipe:
 	@docker build -t nav-mediapipe -f ./docker/Dockerfile.nav.mediapipe .
 
 nav.create:
+	@(if [ ! -z ${DISPLAY} ]; then xhost +; fi)
 	@./docker/scripts/run.bash --volumes=./ws --name='nav'
 
 nav.create.xavier:
@@ -17,7 +18,7 @@ nav.create.mediapipe:
 	@./docker/scripts/run.bash --volumes=./ws --name='nav-mediapipe' --mediapipe
 
 nav.up:
-	@xhost +
+	@(if [ ! -z ${DISPLAY} ]; then xhost +; fi)
 	@docker start nav
 
 make nav.up.jetson:
