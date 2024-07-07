@@ -218,7 +218,6 @@ class navigationServer(object):
                 self.success = False
                 return
             
-            curr_scanned_distance = float('inf') 
             x_distance = []
             y_distance = []
             for inx, data in enumerate(self.scan_data.ranges):
@@ -227,16 +226,12 @@ class navigationServer(object):
 
                 ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
                 x_distance.append(data * math.sin(ray_angle))
-                y_distance.append(data * math.cos
-                                  (ray_angle))
+                y_distance.append(data * math.cos(ray_angle))
 
             # Fit the RANSAC model
             x_distance = numpy.array(x_distance).reshape(-1, 1)
             y_distance = numpy.array(y_distance).reshape(-1, 1)
             self.ransac_model.fit(x_distance, y_distance)
-
-            # Get curr distance in the x axis
-            print (x_distance, y_distance)
 
             curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]
                         
@@ -303,9 +298,7 @@ class navigationServer(object):
     
     # REDO THIS FUNCTION
     def move_backward(self, cmd_vel):
-        if self.robot_pose is None or self.scan_data is None:
-            if self.robot_pose is None:
-                rospy.loginfo("Failed to get robot pose")
+        if self.scan_data is None:
             if self.scan_data is None:
                 rospy.loginfo("Failed to get scan data")
             self.success = False
@@ -318,8 +311,6 @@ class navigationServer(object):
                 rospy.loginfo('Preempted')
                 self.success = False
                 return
-            
-            curr_scanned_distance = float('inf') 
             x_distance = []
             y_distance = []
             for inx, data in enumerate(self.scan_data.ranges):
@@ -328,16 +319,13 @@ class navigationServer(object):
 
                 ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
                 x_distance.append(data * math.sin(ray_angle))
-                y_distance.append(data * math.cos
-                                  (ray_angle))
+                y_distance.append(data * math.cos(ray_angle))
 
             # Fit the RANSAC model
             x_distance = numpy.array(x_distance).reshape(-1, 1)
             y_distance = numpy.array(y_distance).reshape(-1, 1)
             self.ransac_model.fit(x_distance, y_distance)
 
-            # Get curr distance in the x axis
-            print (x_distance, y_distance)
 
             curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]
               
@@ -353,32 +341,46 @@ class navigationServer(object):
         #self._as.publish_feedback("Achieved max distance")
 
     def door_signal(self):
-        mean = 0
+        if self.scan_data is None:
+            if self.scan_data is None:
+                rospy.loginfo("Failed to get scan data")
+            self.success = False
+            return
+        
+
         while True:
             if self._as.is_preempt_requested() or rospy.is_shutdown():
                 rospy.loginfo('Preempted')
-                self._as.set_preempted()
                 self.success = False
-                self.sever.set_aborted()
-                break
-
-            count = 0
-
-            for i in range(self.init_index, self.end_index):
-                if self.scan_data.ranges[i] == float('inf'):
+                return
+            
+            count = 1
+            average = 0
+            x_distance = []
+            y_distance = []
+            for inx, data in enumerate(self.scan_data.ranges):
+                if data == float('inf'):
                     continue
-                count += 1
-                ray_angle = self.scan_data.angle_min + i * self.scan_data.angle_increment
-                mean += self.scan_data.ranges[i] * math.cos(ray_angle)
-                rospy.loginfo('Mean distance: {}'.format(mean))
-            
-            mean /= count
 
-            
-            if mean >= 1:
+                ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                x_distance.append(data * math.sin(ray_angle))
+                y_distance.append(data * math.cos(ray_angle))
+
+            # Fit the RANSAC model
+            x_distance = numpy.array(x_distance).reshape(-1, 1)
+            y_distance = numpy.array(y_distance).reshape(-1, 1)
+            self.ransac_model.fit(x_distance, y_distance)
+
+            curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]                
+            rospy.loginfo('Scanned distance: {}'.format(curr_scanned_distance))
+
+            if count > 1 and abs(curr_scanned_distance - average) > 3:
+                rospy.loginfo('Door signal detected')
+                self.success = True
                 break
 
-            #self._as.publish_feedback('Mean distance: {}'.format(mean))
+            average = (curr_scanned_distance + average) / count
+            count += 1
             self.r.sleep()
 
     def scan_callback(self, data):
