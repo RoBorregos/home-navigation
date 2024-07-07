@@ -18,6 +18,7 @@ def main():
         goal.point.x = x
         goal.point.y = y
         goal.point.z = 0
+        goal.header.frame_id = "map"
         resp1 = room_getter(goal)
         print(f"Room: {resp1.room}")
     except rospy.ServiceException as e:

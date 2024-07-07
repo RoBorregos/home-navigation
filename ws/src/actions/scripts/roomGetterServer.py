@@ -8,6 +8,8 @@ import cv2 as cv
 from frida_navigation_interfaces.srv import RoomGetter
 import pathlib
 import copy
+import tf2_ros
+import tf2_geometry_msgs
 
 BASE_PATH = str(pathlib.Path(__file__).parent)
 
@@ -17,17 +19,22 @@ class RoomGetterServer:
         self.room_getter_service = rospy.Service(
             "/room_getter", RoomGetter, self.get_room_from_map
         )
+
+        self.tfBuffer = tf2_ros.Buffer()
+        self.listener = tf2_ros.TransformListener(self.tfBuffer)
+
         self.map_file = BASE_PATH + "/../../map_contextualizer/scripts/map_dimensions.json"
         self.mask = None
         self.scale = 100
         self.room = dict()
         self.room[0] = "Unknown"
-        rospy.loginfo("Room Getter Service is ready")
         
         self.load_data()
         self.load_map()
         self.load_rooms()
         # self.see_mask_cv()
+
+        rospy.loginfo("Room Getter Service is ready")
     
     def load_data(self):
         with open(self.map_file, "r") as f:
@@ -91,17 +98,20 @@ class RoomGetterServer:
         cv.waitKey(0)
         cv.destroyAllWindows
         
-    def get_room(self, req: RoomGetter):
-        # Load the map
-        map_path = rospy.get_param("/map_path")
-        map_img = cv.imread(map_path, cv.IMREAD_GRAYSCALE)
-
-        # Get the room
-        room = self.get_room_from_map(req.point)
-
-        return room
 
     def get_room_from_map(self, goal) -> str:
+        try:
+            self.tfBuffer.lookup_transform("map", goal.header.frame_id, rospy.Time())
+        except Exception as e:
+            rospy.logerr(e)
+            return "Unknown"
+
+        try:
+            goal = self.tfBuffer.transform(goal, "map")
+        except Exception as e:
+            rospy.logerr(e)
+            return "Unknown"
+        
         # Denormalize the points
         x = goal.object_point.point.x * self.scale
         y = goal.object_point.point.y * self.scale
