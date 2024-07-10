@@ -21,7 +21,7 @@ BASE_PATH = str(pathlib.Path(__file__).parent)
 
 MODES = ["PoseSaver", "DimensionSaver"]
 
-contextualizer_mode = MODES[1]
+contextualizer_mode = MODES[0]
 
 node_name = "map_roi"
 class PoseSaver:

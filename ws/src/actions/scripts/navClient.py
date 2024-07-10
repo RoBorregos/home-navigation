@@ -70,7 +70,7 @@ class NavClient(object):
 
         rospy.loginfo("Sending Nav Goal")
         self.client.send_goal(
-                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.BACKWARD,  target_pose = NavGoalScope.pose),
+                    navServGoal(target_location = NavGoalScope.target_location, goal_type = navServGoal.FORWARD,  target_pose = NavGoalScope.pose),
                     feedback_cb=nav_goal_feedback,
                     done_cb=get_result_callback)
         

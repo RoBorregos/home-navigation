@@ -56,7 +56,7 @@ class navigationServer(object):
         self.scan_data = None
         self.robot_pose = None
         self.target_departure = 1
-        self.target_approach = 0.5
+        self.target_approach = 0.2
         self.x_vel = 0.05
         self.angular_vel = 0.05
         self.success = True
@@ -108,9 +108,16 @@ class navigationServer(object):
     
     def execute_cb(self, goal):
         rospy.loginfo("[INFO] Executing goal")
+        print (goal)
+
         target = str(goal.target_location)
         goal_type = goal.goal_type
         goal_pose = self.get_goal(target) if target != "" else goal.target_pose
+        if goal_pose is None:
+            rospy.loginfo("[ERROR] Invalid target")
+            self._as.set_succeeded(navServResult(result=False))
+            return
+        
         cmd_vel = Twist()
         if (goal_type == goal.NAV_MODE):
             if goal_pose is None:
@@ -328,6 +335,8 @@ class navigationServer(object):
 
 
             curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]
+
+            rospy.loginfo('Scanned distance: {}'.format(curr_scanned_distance))
               
             cmd_vel.linear.x = -self.x_vel
             cmd_vel.angular.z = 0                
