@@ -23,6 +23,9 @@ from sklearn.linear_model import RANSACRegressor
 BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
 DEBUG = False
 
+TARGET_APPROACH = 0.3
+TARGET_DEPARTURE = 0.5
+
 def euler_from_quaternion(x, y, z, w):
     """
     Convert a quaternion into euler angles (roll, pitch, yaw)
@@ -55,9 +58,7 @@ class navigationServer(object):
 
         self.scan_data = None
         self.robot_pose = None
-        self.target_departure = 1
-        self.target_approach = 0.2
-        self.x_vel = 0.05
+        self.x_vel = 0.2
         self.angular_vel = 0.05
         self.success = True
         self.scan_topic = rospy.get_param('~scanner', '/zed2/scan')
@@ -132,11 +133,11 @@ class navigationServer(object):
                 rospy.loginfo("[ERROR] Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
 
-            self.move_forward(cmd_vel, goal_pose)
+            self.move_forward(cmd_vel, goal_pose, target_approach=TARGET_APPROACH if goal.target_approach == 0.9 else goal.target_approach)
             rospy.loginfo("[INFO] Robot approached " + target)
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.BACKWARD):
-            self.move_backward(cmd_vel)
+            self.move_backward(cmd_vel, target_departure=TARGET_DEPARTURE if goal.target_departure == 0.9 else goal.target_departure)
             rospy.loginfo("[INFO] Robot moved backward")
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.DOOR_SIGNAL):
@@ -193,7 +194,7 @@ class navigationServer(object):
         vel_msg.angular.z = 0
         velocity_publisher.publish(vel_msg)
 
-    def move_forward(self, cmd_vel : Twist, goal : PoseStamped):
+    def move_forward(self, cmd_vel : Twist, goal : PoseStamped, target_approach : float):
         if self.robot_pose is None or self.scan_data is None:
             if self.robot_pose is None:
                 rospy.loginfo("Failed to get robot pose")
@@ -213,7 +214,7 @@ class navigationServer(object):
         
         min_scanned_distance = float('inf')
          
-        while min_scanned_distance > self.target_approach:
+        while min_scanned_distance > target_approach:
             try:
                 goal_pose = self.tf_buffer.transform(goal, 'base_footprint', rospy.Duration(2.0))
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
@@ -232,6 +233,8 @@ class navigationServer(object):
                     continue
 
                 ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                if ray_angle < -(3 * math.pi) / 4 or ray_angle > (3 * math.pi) / 4:
+                    continue
                 x_distance.append(data * math.sin(ray_angle))
                 y_distance.append(data * math.cos(ray_angle))
 
@@ -304,16 +307,16 @@ class navigationServer(object):
 
     
     # REDO THIS FUNCTION
-    def move_backward(self, cmd_vel):
+    def move_backward(self, cmd_vel, target_departure):
         if self.scan_data is None:
             if self.scan_data is None:
                 rospy.loginfo("Failed to get scan data")
             self.success = False
             return
         
-        min_scanned_distance = self.target_approach
+        min_scanned_distance = 0.0
 
-        while min_scanned_distance < self.target_departure:
+        while min_scanned_distance < target_departure:
             if self._as.is_preempt_requested() or rospy.is_shutdown():
                 rospy.loginfo('Preempted')
                 self.success = False
@@ -323,8 +326,10 @@ class navigationServer(object):
             for inx, data in enumerate(self.scan_data.ranges):
                 if data == float('inf'):
                     continue
-
+                
                 ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                if ray_angle < -(3 * math.pi) / 4 or ray_angle > (3 * math.pi) / 4:
+                    continue
                 x_distance.append(data * math.sin(ray_angle))
                 y_distance.append(data * math.cos(ray_angle))
 
