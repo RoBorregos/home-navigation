@@ -1,6 +1,6 @@
 <launch>
   <node name="ydlidar_node"  pkg="ydlidar"  type="ydlidar_node" output="screen">
-    <param name="port"         type="string" value="/dev/port1"/>  
+    <param name="port"         type="string" value="/dev/ttyUSB0"/>  
     <param name="baudrate"     type="int"    value="230400"/>
     <param name="frame_id"     type="string" value="laser_frame"/>
     <param name="angle_fixed"  type="bool"   value="true"/>
@@ -12,8 +12,8 @@
     <param name="range_min"    type="double" value="0.3" />
     <param name="range_max"    type="double" value="16.0" />
     <param name="ignore_array" type="string" value="-140,-135, -95,-90, 100,110, 143,148, 165,180, 164,180, 163,180, 162,180, 161,180" />
-    <param name="samp_rate"    type="int"    value="4"/>
-    <param name="frequency"    type="double" value="10"/>
+    <param name="samp_rate"    type="int"    value="9"/>
+    <param name="frequency"    type="double" value="7"/>
   </node>
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser4"
     args="0.1 0.0 0.2 3.14 3.14  0.0 /base_footprint /laser_frame 40" />

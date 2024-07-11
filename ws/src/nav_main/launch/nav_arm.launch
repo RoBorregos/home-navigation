@@ -1,0 +1,8 @@
+<launch>
+    <arg name="scanner" default="/zed2/scan" />
+    <include file="$(find nav_main)/launch/scan_merger.launch"/>
+    <include file="$(find nav_main)/launch/zed2ls.launch"/>
+    <include file="$(find actions)/launch/nav_actions.launch">
+        <arg name="scanner" value="$(arg scanner)" />
+    </include>
+<launch/>
