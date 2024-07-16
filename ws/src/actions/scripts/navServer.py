@@ -133,11 +133,11 @@ class navigationServer(object):
                 rospy.loginfo("[ERROR] Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
 
-            self.move_forward(cmd_vel, goal_pose, target_approach=TARGET_APPROACH if goal.target_approach == 0.9 else goal.target_approach)
+            self.move_forward(cmd_vel, goal_pose, target_approach=TARGET_APPROACH if goal.target_approach == 0.0 else goal.target_approach)
             rospy.loginfo("[INFO] Robot approached " + target)
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.BACKWARD):
-            self.move_backward(cmd_vel, target_departure=TARGET_DEPARTURE if goal.target_departure == 0.9 else goal.target_departure)
+            self.move_backward(cmd_vel, target_departure=TARGET_DEPARTURE if goal.target_departure == 0.0 else goal.target_departure)
             rospy.loginfo("[INFO] Robot moved backward")
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.DOOR_SIGNAL):
