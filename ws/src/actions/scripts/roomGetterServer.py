@@ -10,6 +10,7 @@ import pathlib
 import copy
 import tf2_ros
 import tf2_geometry_msgs
+import os
 
 BASE_PATH = str(pathlib.Path(__file__).parent)
 
@@ -23,7 +24,7 @@ class RoomGetterServer:
         self.tfBuffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
-        self.map_file = BASE_PATH + "/../../map_contextualizer/scripts/map_dimensions.json"
+        self.map_file = os.path.join(BASE_PATH ,"map_dimension.json")
         self.mask = None
         self.scale = 100
         self.room = dict()
@@ -85,7 +86,7 @@ class RoomGetterServer:
             copy_mask = cv.flip(copy_mask, 0)
             copy_mask = cv.threshold(copy_mask, 0, 255, cv.THRESH_BINARY)[1]
 
-            # self.see_mask_cv(copy_mask)    
+            self.see_mask_cv(copy_mask)    
 
             indexes = np.where(copy_mask == 255)
             self.mask[indexes] = 255
