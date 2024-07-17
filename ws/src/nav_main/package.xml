@@ -49,18 +49,21 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>ira_laser_tools</build_depend>
+  <build_depend>actions</build_depend>
   <build_depend>pointcloud_to_laserscan</build_depend>
   <build_depend>depthimage_to_laserscan</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_export_depend>ira_laser_tools</build_export_depend>
+  <build_export_depend>actions</build_export_depend>
   <build_export_depend>pointcloud_to_laserscan</build_export_depend>
   <build_export_depend>depthimage_to_laserscan</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <exec_depend>ira_laser_tools</exec_depend>
+  <exec_depend>actions</exec_depend>
   <exec_depend>pointcloud_to_laserscan</exec_depend>
   <exec_depend>depthimage_to_laserscan</exec_depend>
   <exec_depend>roscpp</exec_depend>

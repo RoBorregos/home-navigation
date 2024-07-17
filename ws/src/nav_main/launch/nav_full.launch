@@ -1,0 +1,5 @@
+<launch>
+	<include file="$(find nav_main)/launch/zed2ls.launch"/>
+    <include file="$(find nav_main)/launch/scan_merger.launch"/>
+    <include file="$(find actions)/launch/nav_actions.launch"/>
+</launch>
