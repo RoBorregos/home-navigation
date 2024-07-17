@@ -56,19 +56,22 @@ class navigationServer(object):
 
         self.ransac_model = RANSACRegressor()
 
-        self.scan_data = None
+        self.visual_scan_data = None
+        self.lidar_scan_data = None
         self.robot_pose = None
         self.x_vel = 0.2
         self.angular_vel = 0.05
         self.success = True
-        self.scan_topic = rospy.get_param('~scanner', '/zed2/scan')
-        rospy.loginfo("Scanner topic: " + self.scan_topic)
+        self.visual_scanner = rospy.get_param('~visual_scanner', '/zed2/scan')
+        self.lidar_scanner = rospy.get_param('~lidar_scanner', '/scan')
+        rospy.loginfo("Approach scanner topic: " + self.visual_scanner)
         rospy.loginfo("Waiting for MoveBase AS...")
         
         self.move_client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.robot_pose_sub = rospy.Subscriber('/robot_pose', Pose, self.robot_pose_callback, queue_size=1)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-        self.scan_sub = rospy.Subscriber(self.scan_topic, LaserScan, self.scan_callback, queue_size=1)
+        self.visual_scan_sub = rospy.Subscriber(self.visual_scanner, LaserScan, self.visual_scan_callback, queue_size=1)
+        self.lidar_scan_sub = rospy.Subscriber(self.lidar_scanner, LaserScan, self.lidar_scan_callback, queue_size=1)
 
         self.move_client.wait_for_server()
         rospy.loginfo("MoveBase AS Loaded ...")
@@ -195,10 +198,10 @@ class navigationServer(object):
         velocity_publisher.publish(vel_msg)
 
     def move_forward(self, cmd_vel : Twist, goal : PoseStamped, target_approach : float):
-        if self.robot_pose is None or self.scan_data is None:
+        if self.robot_pose is None or self.visual_scan_data is None:
             if self.robot_pose is None:
                 rospy.loginfo("Failed to get robot pose")
-            if self.scan_data is None:
+            if self.visual_scan_data is None:
                 rospy.loginfo("Failed to get scan data")
             self.success = False
             return
@@ -228,11 +231,11 @@ class navigationServer(object):
             
             x_distance = []
             y_distance = []
-            for inx, data in enumerate(self.scan_data.ranges):
+            for inx, data in enumerate(self.visual_scan_data.ranges):
                 if data == float('inf'):
                     continue
 
-                ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                ray_angle = self.visual_scan_data.angle_min + inx * self.visual_scan_data.angle_increment
                 if ray_angle < -(3 * math.pi) / 4 or ray_angle > (3 * math.pi) / 4:
                     continue
                 x_distance.append(data * math.sin(ray_angle))
@@ -308,8 +311,8 @@ class navigationServer(object):
     
     # REDO THIS FUNCTION
     def move_backward(self, cmd_vel, target_departure):
-        if self.scan_data is None:
-            if self.scan_data is None:
+        if self.visual_scan_data is None:
+            if self.visual_scan_data is None:
                 rospy.loginfo("Failed to get scan data")
             self.success = False
             return
@@ -323,11 +326,11 @@ class navigationServer(object):
                 return
             x_distance = []
             y_distance = []
-            for inx, data in enumerate(self.scan_data.ranges):
+            for inx, data in enumerate(self.visual_scan_data.ranges):
                 if data == float('inf'):
                     continue
                 
-                ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
+                ray_angle = self.visual_scan_data.angle_min + inx * self.visual_scan_data.angle_increment
                 if ray_angle < -(3 * math.pi) / 4 or ray_angle > (3 * math.pi) / 4:
                     continue
                 x_distance.append(data * math.sin(ray_angle))
@@ -355,12 +358,14 @@ class navigationServer(object):
         #self._as.publish_feedback("Achieved max distance")
 
     def door_signal(self):
-        if self.scan_data is None:
-            if self.scan_data is None:
+        if self.lidar_scan_data is None:
+            if self.lidar_scan_data is None:
                 rospy.loginfo("Failed to get scan data")
             self.success = False
             return
         
+        count = 1
+        average = 0
 
         while True:
             if self._as.is_preempt_requested() or rospy.is_shutdown():
@@ -368,27 +373,28 @@ class navigationServer(object):
                 self.success = False
                 return
             
-            count = 1
-            average = 0
+            
             x_distance = []
             y_distance = []
-            for inx, data in enumerate(self.scan_data.ranges):
-                if data == float('inf'):
+            cnt = 1
+            for inx, data in enumerate(self.lidar_scan_data.ranges):
+                if data == float('inf') or data == 0.0:
                     continue
-
-                ray_angle = self.scan_data.angle_min + inx * self.scan_data.angle_increment
-                x_distance.append(data * math.sin(ray_angle))
+                
+                ray_angle = self.lidar_scan_data.angle_min + inx * self.lidar_scan_data.angle_increment
+                if ray_angle < -(3 * math.pi) / 4 or ray_angle > (3 * math.pi) / 4:
+                    continue
+                # print (data, ray_angle)
                 y_distance.append(data * math.cos(ray_angle))
 
             # Fit the RANSAC model
-            x_distance = numpy.array(x_distance).reshape(-1, 1)
             y_distance = numpy.array(y_distance).reshape(-1, 1)
-            self.ransac_model.fit(x_distance, y_distance)
+            mean = numpy.mean(y_distance)
 
-            curr_scanned_distance = self.ransac_model.predict(numpy.array([[0]]))[0][0]                
+            curr_scanned_distance = mean
             rospy.loginfo('Scanned distance: {}'.format(curr_scanned_distance))
 
-            if count > 1 and abs(curr_scanned_distance - average) > 3:
+            if count > 1 and abs(curr_scanned_distance - average) > 1:
                 rospy.loginfo('Door signal detected')
                 self.success = True
                 break
@@ -397,8 +403,11 @@ class navigationServer(object):
             count += 1
             self.r.sleep()
 
-    def scan_callback(self, data):
-        self.scan_data = data
+    def visual_scan_callback(self, data):
+        self.visual_scan_data = data
+
+    def lidar_scan_callback(self, data):
+        self.lidar_scan_data = data
 
     def robot_pose_callback(self, data):
         self.robot_pose = data
