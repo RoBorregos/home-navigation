@@ -23,7 +23,7 @@ from sklearn.linear_model import RANSACRegressor
 BASE_PATH = str(pathlib.Path(__file__).parent) + "/../../map_contextualizer/scripts"
 DEBUG = False
 
-TARGET_APPROACH = 0.3
+TARGET_APPROACH = 0.35
 TARGET_DEPARTURE = 0.5
 
 def euler_from_quaternion(x, y, z, w):
@@ -140,7 +140,7 @@ class navigationServer(object):
             rospy.loginfo("[INFO] Robot approached " + target)
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.BACKWARD):
-            self.move_backward(cmd_vel, target_departure=TARGET_DEPARTURE if goal.target_departure == 0.0 else goal.target_departure)
+            self.move_backward(cmd_vel, TARGET_DEPARTURE)
             rospy.loginfo("[INFO] Robot moved backward")
             self._as.set_succeeded(navServResult(result=self.success))
         elif (goal_type == goal.DOOR_SIGNAL):

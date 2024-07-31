@@ -1,0 +1,12 @@
+<launch>
+  <!-- <include file="$(find robot_description)/launch/display.dashgo.launch"/> -->
+  <include file="$(find nav_main)/launch/include/imu/gmapping_sim_t.launch"/>
+  <include file="$(find nav_main)/launch/include/imu/teb_move_base.launch"/>
+  <arg name="base_frame" default="Base"/> 
+
+  <!-- <node name="robot_pose_publisher" pkg="robot_pose_publisher" type="robot_pose_publisher" /> -->
+  <!-- <node pkg="laser_filters" type="scan_to_scan_filter_chain" output="screen" name="laser_filter">
+      <rosparam command="load" file="$(find dashgo_tools)/conf/box_filter.yaml" />
+  </node> -->
+  <!-- <node name="robot_data" pkg="dashgo_tools" type="robot_data.py" respawn="true" /> -->
+</launch>
