@@ -112,6 +112,13 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+add_executable(ignore_laser src/ignore_laser.cpp)
+target_link_libraries(ignore_laser ${catkin_LIBRARIES})
+
 ###########
 ## Build ##
 ###########
@@ -122,6 +129,7 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -173,6 +181,7 @@ install(PROGRAMS
   scripts/recovery_node.py
   scripts/test_goals.py
   scripts/TMR_Initial_Test.py
+  src/ignore_laser.cpp
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -181,6 +190,7 @@ install(PROGRAMS
 # install(TARGETS ${PROJECT_NAME}_node
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html

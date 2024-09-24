@@ -4,7 +4,7 @@
     <include file="$(find nav_main)/launch/pc2ls.launch"/>
 	<!-- <include file="$(find nav_main)/launch/scan_merger.launch"/> -->
 	<!-- <include file="$(find dashgo_description)/launch/dashgo_description.launch"/> -->
-		<arg name="map_file" default="$(find nav_main)/maps/lab_nuevo.yaml"/>
+		<arg name="map_file" default="$(find nav_main)/maps/map_tmr_2024_fixed.yaml"/>
 		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 		<rosparam file="$(arg map_file)" command="load" ns="map" />
 		<arg name="initial_pose_x" default="0.0"/> 

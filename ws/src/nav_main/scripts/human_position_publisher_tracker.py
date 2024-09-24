@@ -43,11 +43,12 @@ class HumanPositionPublisher:
             "/zed2/zed_node/depth/camera_info", CameraInfo, self.camera_info_callback
         )
 
+        self.follow_person = False
+        
         self.change_follow_state = rospy.Service("/change_follow_person_state", SetBool, self.change_follow_person_state)
         self.change_person_tracker_state = rospy.ServiceProxy("/change_person_tracker_state", SetBool)
         self.person_tracker_subscriber = rospy.Subscriber("/person_detection", Point, self.person_tracker_callback)
 
-        self.follow_person = False
 
         self.cv_image = None
         self.camera_info = None
@@ -110,7 +111,7 @@ class HumanPositionPublisher:
         self.cv_image = data
 
     def person_tracker_callback(self, detection: Point):
-        if not self.follow_person or self.cv_image is None or self.camera_info is None:
+        if self.cv_image is None or self.camera_info is None:
             print(f'Follow person: {self.follow_person}, cv_image: {self.cv_image is None}, camera_info: {self.camera_info is None}')
             return
         
@@ -142,7 +143,11 @@ class HumanPositionPublisher:
             except tf2_ros.LookupException:
                 print("Transform lookup failed.")
                 return
-                
+            
+            if target_pt.point.x > 4.5:
+                print("Too far from the robot")
+                return
+
             if target_pt.point.x < 0.3:
                 print("Too close to the robot")
                 # return
