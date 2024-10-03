@@ -1,5 +1,5 @@
 
-
+// Setting goal: Frame:map, Position(-2.789, -0.124, 0.000), Orientation(0.000, 0.000, 0.774, 0.633) = Angle: 1.772
 #include "ros/ros.h"
 #include "sensor_msgs/LaserScan.h"
 #include <vector>
