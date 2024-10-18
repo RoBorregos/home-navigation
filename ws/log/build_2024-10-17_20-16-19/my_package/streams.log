@@ -1,0 +1,31 @@
+[1.121s] Invoking command in '/home/gerardo/Roborregos/Repos/nav_new/ws/src/my_package': PYTHONPATH=/home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/my_package build --build-base /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/build install --record /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/install.log --single-version-externally-managed install_data
+[1.341s] /home/gerardo/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:261: UserWarning: Unknown distribution option: 'tests_require'
+[1.341s]   warnings.warn(msg)
+[1.505s] running egg_info
+[1.532s] writing ../../build/my_package/my_package.egg-info/PKG-INFO
+[1.532s] writing dependency_links to ../../build/my_package/my_package.egg-info/dependency_links.txt
+[1.533s] writing entry points to ../../build/my_package/my_package.egg-info/entry_points.txt
+[1.533s] writing requirements to ../../build/my_package/my_package.egg-info/requires.txt
+[1.533s] writing top-level names to ../../build/my_package/my_package.egg-info/top_level.txt
+[1.587s] reading manifest file '../../build/my_package/my_package.egg-info/SOURCES.txt'
+[1.588s] writing manifest file '../../build/my_package/my_package.egg-info/SOURCES.txt'
+[1.589s] running build
+[1.589s] running build_py
+[1.589s] copying my_package/__init__.py -> /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/build/lib/my_package
+[1.589s] copying my_package/dashgo_driver.py -> /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/build/lib/my_package
+[1.590s] copying my_package/my_node.py -> /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/build/lib/my_package
+[1.590s] running install
+[1.596s] running install_lib
+[1.625s] copying /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/build/lib/my_package/dashgo_driver.py -> /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package
+[1.626s] byte-compiling /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package/dashgo_driver.py to dashgo_driver.cpython-310.pyc
+[1.639s] running install_data
+[1.640s] copying resource/my_package -> /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/share/ament_index/resource_index/packages
+[1.640s] copying package.xml -> /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/share/my_package
+[1.640s] running install_egg_info
+[1.668s] removing '/home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package-0.0.0-py3.10.egg-info' (and everything under it)
+[1.668s] Copying ../../build/my_package/my_package.egg-info to /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package-0.0.0-py3.10.egg-info
+[1.669s] running install_scripts
+[1.879s] Installing dashgo_driver script to /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/my_package
+[1.879s] Installing my_node script to /home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/my_package
+[1.880s] writing list of installed files to '/home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/install.log'
+[1.915s] Invoked command in '/home/gerardo/Roborregos/Repos/nav_new/ws/src/my_package' returned '0': PYTHONPATH=/home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/gerardo/Roborregos/Repos/nav_new/ws/install/my_package/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/my_package build --build-base /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/build install --record /home/gerardo/Roborregos/Repos/nav_new/ws/build/my_package/install.log --single-version-externally-managed install_data

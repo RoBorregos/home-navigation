@@ -1,0 +1,74 @@
+[0.000000] (-) TimerEvent: {}
+[0.000601] (my_package) JobQueued: {'identifier': 'my_package', 'dependencies': OrderedDict()}
+[0.002024] (my_package) JobStarted: {'identifier': 'my_package'}
+[0.099859] (-) TimerEvent: {}
+[0.200172] (-) TimerEvent: {}
+[0.300560] (-) TimerEvent: {}
+[0.400922] (-) TimerEvent: {}
+[0.501819] (-) TimerEvent: {}
+[0.602207] (-) TimerEvent: {}
+[0.702672] (-) TimerEvent: {}
+[0.803023] (-) TimerEvent: {}
+[0.903355] (-) TimerEvent: {}
+[1.003715] (-) TimerEvent: {}
+[1.104054] (-) TimerEvent: {}
+[1.204362] (-) TimerEvent: {}
+[1.304772] (-) TimerEvent: {}
+[1.405156] (-) TimerEvent: {}
+[1.505859] (-) TimerEvent: {}
+[1.606462] (-) TimerEvent: {}
+[1.707112] (-) TimerEvent: {}
+[1.807444] (-) TimerEvent: {}
+[1.907814] (-) TimerEvent: {}
+[2.008258] (-) TimerEvent: {}
+[2.108599] (-) TimerEvent: {}
+[2.208931] (-) TimerEvent: {}
+[2.222817] (my_package) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', 'setup.py', 'egg_info', '--egg-base', '../../build/my_package', 'build', '--build-base', '/home/gerardo/Roborregos/nav_new/ws/build/my_package/build', 'install', '--record', '/home/gerardo/Roborregos/nav_new/ws/build/my_package/install.log', '--single-version-externally-managed', 'install_data'], 'cwd': '/home/gerardo/Roborregos/nav_new/ws/src/my_package', 'env': {'ZELLIJ_SESSION_NAME': 'adamant-donkey', 'LESSOPEN': '| /usr/bin/lesspipe %s', 'USER': 'gerardo', 'LC_TIME': 'es_MX.UTF-8', 'PT8HOME': '/opt/pt', 'XDG_SESSION_TYPE': 'x11', 'SHLVL': '2', 'LD_LIBRARY_PATH': '/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib', 'HOME': '/home/gerardo', 'OLDPWD': '/home/gerardo/Roborregos/nav_new/ws/src', 'DESKTOP_SESSION': 'ubuntu-xorg', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'LC_MONETARY': 'es_MX.UTF-8', 'MANAGERPID': '1849', 'SYSTEMD_EXEC_PID': '2377', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'GIO_LAUNCHED_DESKTOP_FILE_PID': '11873', 'ROS_DISTRO': 'humble', 'GTK_IM_MODULE': 'ibus', 'LOGNAME': 'gerardo', 'ALACRITTY_SOCKET': '/run/user/1000/Alacritty-:0-11873.sock', 'WINDOWID': '54525957', 'JOURNAL_STREAM': '8:15094', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'gerardo', 'TERM': 'alacritty', 'ALACRITTY_LOG': '/tmp/Alacritty-11873.log', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'ROS_LOCALHOST_ONLY': '0', 'WINDOWPATH': '2', 'PATH': '/opt/ros/humble/bin:/home/gerardo/.cargo/bin:/home/gerardo/.local/bin:/home/gerardo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/gerardo/.cargo/bin:/home/gerardo/.cargo/bin', 'SESSION_MANAGER': 'local/gerardo-mac:@/tmp/.ICE-unix/2114,unix/gerardo-mac:/tmp/.ICE-unix/2114', 'INVOCATION_ID': 'ca6e0e6e5dad4a46af27b4fa32528172', 'XDG_MENU_PREFIX': 'gnome-', 'LC_ADDRESS': 'es_MX.UTF-8', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':0', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'LC_TELEPHONE': 'es_MX.UTF-8', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu-xorg', 'ZELLIJ_PANE_ID': '4', 'XAUTHORITY': '/run/user/1000/gdm/Xauthority', 'LS_COLORS': '', 'SSH_AGENT_LAUNCHER': 'gnome-keyring', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/opt/ros/humble', 'ZELLIJ': '0', 'SHELL': '/bin/bash', 'LC_NAME': 'es_MX.UTF-8', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu-xorg', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LC_MEASUREMENT': 'es_MX.UTF-8', 'GPG_AGENT_INFO': '/run/user/1000/gnupg/S.gpg-agent:0:1', 'LC_IDENTIFICATION': 'es_MX.UTF-8', 'QT_IM_MODULE': 'ibus', 'ALACRITTY_WINDOW_ID': '54525957', 'PWD': '/home/gerardo/Roborregos/nav_new/ws/build/my_package', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu-xorg:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/gerardo/Roborregos/nav_new/ws/build/my_package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages:/opt/ros/humble/lib/python3.10/site-packages:/opt/ros/humble/local/lib/python3.10/dist-packages', 'LC_NUMERIC': 'es_MX.UTF-8', 'LC_PAPER': 'es_MX.UTF-8', 'COLCON': '1'}, 'shell': False}
+[2.309082] (-) TimerEvent: {}
+[2.409413] (-) TimerEvent: {}
+[2.509912] (-) TimerEvent: {}
+[2.564181] (my_package) StderrLine: {'line': b"/home/gerardo/.local/lib/python3.10/site-packages/setuptools/_distutils/dist.py:261: UserWarning: Unknown distribution option: 'tests_require'\n"}
+[2.564481] (my_package) StderrLine: {'line': b'  warnings.warn(msg)\n'}
+[2.610005] (-) TimerEvent: {}
+[2.710359] (-) TimerEvent: {}
+[2.810784] (-) TimerEvent: {}
+[2.836841] (my_package) StdoutLine: {'line': b'running egg_info\n'}
+[2.837856] (my_package) StdoutLine: {'line': b'creating ../../build/my_package/my_package.egg-info\n'}
+[2.880010] (my_package) StdoutLine: {'line': b'writing ../../build/my_package/my_package.egg-info/PKG-INFO\n'}
+[2.880762] (my_package) StdoutLine: {'line': b'writing dependency_links to ../../build/my_package/my_package.egg-info/dependency_links.txt\n'}
+[2.881083] (my_package) StdoutLine: {'line': b'writing entry points to ../../build/my_package/my_package.egg-info/entry_points.txt\n'}
+[2.881374] (my_package) StdoutLine: {'line': b'writing requirements to ../../build/my_package/my_package.egg-info/requires.txt\n'}
+[2.881589] (my_package) StdoutLine: {'line': b'writing top-level names to ../../build/my_package/my_package.egg-info/top_level.txt\n'}
+[2.881780] (my_package) StdoutLine: {'line': b"writing manifest file '../../build/my_package/my_package.egg-info/SOURCES.txt'\n"}
+[2.910886] (-) TimerEvent: {}
+[2.971156] (my_package) StdoutLine: {'line': b"reading manifest file '../../build/my_package/my_package.egg-info/SOURCES.txt'\n"}
+[2.973668] (my_package) StdoutLine: {'line': b"writing manifest file '../../build/my_package/my_package.egg-info/SOURCES.txt'\n"}
+[2.973945] (my_package) StdoutLine: {'line': b'running build\n'}
+[2.974140] (my_package) StdoutLine: {'line': b'running build_py\n'}
+[2.974322] (my_package) StdoutLine: {'line': b'creating /home/gerardo/Roborregos/nav_new/ws/build/my_package/build/lib/my_package\n'}
+[2.974828] (my_package) StdoutLine: {'line': b'copying my_package/__init__.py -> /home/gerardo/Roborregos/nav_new/ws/build/my_package/build/lib/my_package\n'}
+[2.975125] (my_package) StdoutLine: {'line': b'copying my_package/my_node.py -> /home/gerardo/Roborregos/nav_new/ws/build/my_package/build/lib/my_package\n'}
+[2.975684] (my_package) StdoutLine: {'line': b'running install\n'}
+[2.988355] (my_package) StdoutLine: {'line': b'running install_lib\n'}
+[3.010998] (-) TimerEvent: {}
+[3.032285] (my_package) StdoutLine: {'line': b'creating /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package\n'}
+[3.032702] (my_package) StdoutLine: {'line': b'copying /home/gerardo/Roborregos/nav_new/ws/build/my_package/build/lib/my_package/__init__.py -> /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package\n'}
+[3.033095] (my_package) StdoutLine: {'line': b'copying /home/gerardo/Roborregos/nav_new/ws/build/my_package/build/lib/my_package/my_node.py -> /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package\n'}
+[3.034009] (my_package) StdoutLine: {'line': b'byte-compiling /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package/__init__.py to __init__.cpython-310.pyc\n'}
+[3.034421] (my_package) StdoutLine: {'line': b'byte-compiling /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package/my_node.py to my_node.cpython-310.pyc\n'}
+[3.034770] (my_package) StdoutLine: {'line': b'running install_data\n'}
+[3.035213] (my_package) StdoutLine: {'line': b'creating /home/gerardo/Roborregos/nav_new/ws/install/my_package/share/ament_index/resource_index/packages\n'}
+[3.035626] (my_package) StdoutLine: {'line': b'copying resource/my_package -> /home/gerardo/Roborregos/nav_new/ws/install/my_package/share/ament_index/resource_index/packages\n'}
+[3.036070] (my_package) StdoutLine: {'line': b'copying package.xml -> /home/gerardo/Roborregos/nav_new/ws/install/my_package/share/my_package\n'}
+[3.036288] (my_package) StdoutLine: {'line': b'running install_egg_info\n'}
+[3.080071] (my_package) StdoutLine: {'line': b'Copying ../../build/my_package/my_package.egg-info to /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/python3.10/site-packages/my_package-0.0.0-py3.10.egg-info\n'}
+[3.081746] (my_package) StdoutLine: {'line': b'running install_scripts\n'}
+[3.111100] (-) TimerEvent: {}
+[3.211535] (-) TimerEvent: {}
+[3.311910] (-) TimerEvent: {}
+[3.412243] (-) TimerEvent: {}
+[3.420914] (my_package) StdoutLine: {'line': b'Installing my_node script to /home/gerardo/Roborregos/nav_new/ws/install/my_package/lib/my_package\n'}
+[3.421651] (my_package) StdoutLine: {'line': b"writing list of installed files to '/home/gerardo/Roborregos/nav_new/ws/build/my_package/install.log'\n"}
+[3.472869] (my_package) CommandEnded: {'returncode': 0}
+[3.501800] (my_package) JobEnded: {'identifier': 'my_package', 'rc': 0}
+[3.502744] (-) EventReactorShutdown: {}

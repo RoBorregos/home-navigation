@@ -1,0 +1,56 @@
+[3.113s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'list', '-p', '--base-paths', '/home/gerardo/Roborregos/nav_new/ws']
+[3.119s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='list', build_base='build', ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['/home/gerardo/Roborregos/nav_new/ws'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], topological_order=False, names_only=False, paths_only=True, topological_graph=False, topological_graph_dot=False, topological_graph_density=False, topological_graph_legend=False, topological_graph_dot_cluster=False, topological_graph_dot_include_skipped=False, verb_parser=<colcon_defaults.argument_parser.defaults.DefaultArgumentsDecorator object at 0x7451844ef9d0>, verb_extension=<colcon_package_information.verb.list.ListVerb object at 0x7451844a8760>, main=<bound method ListVerb.main of <colcon_package_information.verb.list.ListVerb object at 0x7451844a8760>>)
+[3.889s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[3.891s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[3.891s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[3.891s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[3.891s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[3.892s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/gerardo/Roborregos/nav_new/ws'
+[3.893s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extensions ['ignore', 'ignore_ament_install']
+[3.903s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'ignore'
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'ignore_ament_install'
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extensions ['colcon_pkg']
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'colcon_pkg'
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extensions ['colcon_meta']
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'colcon_meta'
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extensions ['ros']
+[3.904s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'ros'
+[4.072s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extensions ['cmake', 'python']
+[4.074s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'cmake'
+[4.074s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'python'
+[4.074s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extensions ['python_setup_py']
+[4.074s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws) by extension 'python_setup_py'
+[4.075s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/build) by extensions ['ignore', 'ignore_ament_install']
+[4.075s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/build) by extension 'ignore'
+[4.076s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/build) ignored
+[4.078s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/install) by extensions ['ignore', 'ignore_ament_install']
+[4.078s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/install) by extension 'ignore'
+[4.078s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/install) ignored
+[4.079s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/log) by extensions ['ignore', 'ignore_ament_install']
+[4.079s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/log) by extension 'ignore'
+[4.080s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/log) ignored
+[4.080s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extensions ['ignore', 'ignore_ament_install']
+[4.081s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'ignore'
+[4.081s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'ignore_ament_install'
+[4.081s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extensions ['colcon_pkg']
+[4.081s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'colcon_pkg'
+[4.083s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extensions ['colcon_meta']
+[4.083s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'colcon_meta'
+[4.083s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extensions ['ros']
+[4.084s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'ros'
+[4.084s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extensions ['cmake', 'python']
+[4.084s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'cmake'
+[4.084s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'python'
+[4.084s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extensions ['python_setup_py']
+[4.084s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src) by extension 'python_setup_py'
+[4.086s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extensions ['ignore', 'ignore_ament_install']
+[4.086s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extension 'ignore'
+[4.087s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extension 'ignore_ament_install'
+[4.087s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extensions ['colcon_pkg']
+[4.087s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extension 'colcon_pkg'
+[4.087s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extensions ['colcon_meta']
+[4.087s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extension 'colcon_meta'
+[4.087s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extensions ['ros']
+[4.088s] Level 1:colcon.colcon_core.package_identification:_identify(/home/gerardo/Roborregos/nav_new/ws/src/my_package) by extension 'ros'
+[4.117s] DEBUG:colcon.colcon_core.package_identification:Package '/home/gerardo/Roborregos/nav_new/ws/src/my_package' with type 'ros.ament_python' and name 'my_package'
+[4.117s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
