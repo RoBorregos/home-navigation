@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #encoding=utf-8
-import rclpy
+
+import rospy
 from geometry_msgs.msg import Twist
 import os, time
 import _thread
@@ -13,16 +14,16 @@ import sys, traceback
 from serial.serialutil import SerialException
 from serial import Serial
 
-import rclpy.clock
-import rclpy.duration
+import roslib
 
 from geometry_msgs.msg import Quaternion, Twist, Pose
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Int16, Int32, UInt16, Float32, String
-from tf2_ros import TransformBroadcaster
+from tf.broadcaster import TransformBroadcaster
 from sensor_msgs.msg import Range, Imu
+import sensor_msgs.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2, PointField 
-from rclpy.qos import QoSProfile
+
 import struct
 import binascii
  
@@ -66,7 +67,7 @@ class Stm32:
 
 
     
-    def __init__(self, port="/dev/port", baudrate=115200, timeout=0.5):
+    def __init__(self, port="/dev/ttyUSB0", baudrate=115200, timeout=0.5):
         self.PID_RATE = 30 # Do not change this!  It is a fixed property of the Stm32 PID controller.
         self.PID_INTERVAL = 1000 / 30
         
@@ -145,6 +146,7 @@ class Stm32:
             below in a thread safe manner.
         '''
         self.port.write(cmd)
+
 
     def receiveFiniteStates(self, rx_data):
         if self.receive_state_ == self.WAITING_FF:
@@ -279,6 +281,7 @@ class Stm32:
         else:
            return self.FAIL, 0, 0
 
+
     def get_sonar_range(self):
         cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x01, 0x0D) + struct.pack("B", 0x0E)
         if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
@@ -312,6 +315,7 @@ class Stm32:
            return  self.SUCCESS, yaw, yaw_vel, x_acc, y_acc, z_acc
         else:
            return self.FAIL, 0, 0, 0, 0, 0
+
 
     def get_emergency_button(self):
         cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x01, 0x15) + struct.pack("B", 0x16)
@@ -439,6 +443,7 @@ class Stm32:
         else:
            return self.FAIL, -1, -1, -1, -1, -1, -1
 
+
     def start_automatic_recharge(self):
         ''' start for automatic recharge.
         '''
@@ -502,26 +507,24 @@ class Stm32:
 
 """ Class to receive Twist commands and publish Odometry data """
 class BaseController:
-    def __init__(self, Stm32, base_frame,node,qos_profile):
+    def __init__(self, Stm32, base_frame):
         self.Stm32 = Stm32
         self.base_frame = base_frame
-        self.node = node
-        self.qos_profile = qos_profile
-        self.rate = float(self.node.declare_parameter("~base_controller_rate", 10).value)
-        self.timeout = self.node.declare_parameter("~base_controller_timeout", 1.0).value
+        self.rate = float(rospy.get_param("~base_controller_rate", 10))
+        self.timeout = rospy.get_param("~base_controller_timeout", 1.0)
         self.stopped = False
-        self.useImu = self.node.declare_parameter("~useImu", False).value
-        self.useSonar = self.node.declare_parameter("~useSonar", False).value
+        self.useImu = rospy.get_param("~useImu", False)
+        self.useSonar = rospy.get_param("~useSonar", False)
 
-        self.wheel_diameter = self.node.declare_parameter("~wheel_diameter", 0.1518).value
-        self.wheel_track = self.node.declare_parameter("~wheel_track", 0.375).value
-        self.encoder_resolution = self.node.declare_parameter("~encoder_resolution", 42760).value
-        self.gear_reduction = self.node.declare_parameter("~gear_reduction", 1.0).value
+        self.wheel_diameter = rospy.get_param("~wheel_diameter", 0.1518)
+        self.wheel_track = rospy.get_param("~wheel_track", 0.375)
+        self.encoder_resolution = rospy.get_param("~encoder_resolution", 42760)
+        self.gear_reduction = rospy.get_param("~gear_reduction", 1.0)
         
-        self.accel_limit = self.node.declare_parameter('~accel_limit', 0.1).value
-        self.motors_reversed = self.node.declare_parameter("~motors_reversed", False).value
+        self.accel_limit = rospy.get_param('~accel_limit', 0.1)
+        self.motors_reversed = rospy.get_param("~motors_reversed", False)
        
-        self.start_rotation_limit_w = self.node.declare_parameter("~start_rotation_limit_w", 0.4).value
+        self.start_rotation_limit_w = rospy.get_param("~start_rotation_limit_w", 0.4) 
         # Set up PID parameters and check for missing values
         #self.setup_pid(pid_params)
             
@@ -534,17 +537,16 @@ class BaseController:
         # Track how often we get a bad encoder count (if any)
         self.bad_encoder_count = 0
 
-        self.encoder_min = self.node.declare_parameter('encoder_min', 0).value
-        self.encoder_max = self.node.declare_parameter('encoder_max', 65535).value
-        self.encoder_low_wrap = self.node.declare_parameter('wheel_low_wrap', (self.encoder_max - self.encoder_min) * 0.3 + self.encoder_min ).value
-        self.encoder_high_wrap = self.node.declare_parameter('wheel_high_wrap', (self.encoder_max - self.encoder_min) * 0.7 + self.encoder_min ).value
+        self.encoder_min = rospy.get_param('encoder_min', 0)
+        self.encoder_max = rospy.get_param('encoder_max', 65535)
+        self.encoder_low_wrap = rospy.get_param('wheel_low_wrap', (self.encoder_max - self.encoder_min) * 0.3 + self.encoder_min )
+        self.encoder_high_wrap = rospy.get_param('wheel_high_wrap', (self.encoder_max - self.encoder_min) * 0.7 + self.encoder_min )
         self.l_wheel_mult = 0
         self.r_wheel_mult = 0
                         
-        now = self.node.get_clock().now()   
+        now = rospy.Time.now()    
         self.then = now # time for determining dx/dy
-        self.duration_temp = 1.0/self.rate
-        self.t_delta = rclpy.duration.Duration(seconds=self.duration_temp)
+        self.t_delta = rospy.Duration(1.0 / self.rate)
         self.t_next = now + self.t_delta
 
         # Internal data        
@@ -561,25 +563,25 @@ class BaseController:
 
         # Subscriptions
         #rospy.Subscriber("cmd_vel", Twist, self.cmdVelCallback)
-        self.node.create_subscription(Twist,"smoother_cmd_vel",  self.cmdVelCallback,self.qos_profile)
-        self.robot_cmd_vel_pub = self.node.create_publisher(Twist, 'robot_cmd_vel', self.qos_profile)
+        rospy.Subscriber("smoother_cmd_vel", Twist, self.cmdVelCallback)
+        self.robot_cmd_vel_pub = rospy.Publisher('robot_cmd_vel', Twist, queue_size=5)
         
         # Clear any old odometry info
         self.Stm32.reset_encoders()
         self.Stm32.reset_IMU()
         
-        self.node.create_subscription( Int16,"is_passed", self.isPassedCallback, self.qos_profile)
+        rospy.Subscriber("is_passed", Int16, self.isPassedCallback)
         self.isPassed = True
 
-        self.node.create_subscription(Int16,"is_passed_2",  self.isPassedCallback_2, self.qos_profile)
+        rospy.Subscriber("is_passed_2", Int16, self.isPassedCallback_2)
         self.isPassed_2 = True
 
         ## sonar 
-        self.sonar0_pub = self.node.create_publisher(Range,'sonar0',self.qos_profile)
-        self.sonar1_pub = self.node.create_publisher( Range,'sonar1', self.qos_profile)
-        self.sonar2_pub = self.node.create_publisher( Range,'sonar2', self.qos_profile)
-        self.sonar3_pub = self.node.create_publisher( Range,'sonar3', self.qos_profile)
-        self.sonar4_pub = self.node.create_publisher( Range, 'sonar4',self.qos_profile)
+        self.sonar0_pub = rospy.Publisher('sonar0', Range, queue_size=5)
+        self.sonar1_pub = rospy.Publisher('sonar1', Range, queue_size=5)
+        self.sonar2_pub = rospy.Publisher('sonar2', Range, queue_size=5)
+        self.sonar3_pub = rospy.Publisher('sonar3', Range, queue_size=5)
+        self.sonar4_pub = rospy.Publisher('sonar4', Range, queue_size=5)
       
         self.sonar_r0 =0.0
         self.sonar_r1 =0.0
@@ -589,33 +591,33 @@ class BaseController:
         
         self.safe_range_0 = 10
         self.safe_range_1 = 30
-        self.sonar_pub_cloud = self.node.create_publisher( PointCloud2, "/sonar_cloudpoint", self.qos_profile)
+        self.sonar_pub_cloud = rospy.Publisher("/sonar_cloudpoint", PointCloud2, queue_size=5)
 
-        self.sonar_height = self.node.declare_parameter("~sonar_height", 0.15).value
+        self.sonar_height = rospy.get_param("~sonar_height", 0.15)
         self.sonar_maxval = 3.5
         
         #self.robot_radius = rospy.get_param("~robot_radius", 0.21)
-        self.point_offset = self.node.declare_parameter("~point_offset", 0.08).value
-        self.sonar0_offset_yaw = self.node.declare_parameter("~sonar0_offset_yaw", 0.0).value
-        self.sonar0_offset_x = self.node.declare_parameter("~sonar0_offset_x", 0.27).value
-        self.sonar0_offset_y = self.node.declare_parameter("~sonar0_offset_y", 0.19).value
+        self.point_offset = rospy.get_param("~point_offset", 0.08)
+        self.sonar0_offset_yaw = rospy.get_param("~sonar0_offset_yaw", 0.0)
+        self.sonar0_offset_x = rospy.get_param("~sonar0_offset_x", 0.27)
+        self.sonar0_offset_y = rospy.get_param("~sonar0_offset_y", 0.19)
 
-        self.sonar1_offset_yaw = self.node.declare_parameter("~sonar1_offset_yaw", 0.0).value
-        self.sonar1_offset_x = self.node.declare_parameter("~sonar1_offset_x", 0.27).value
-        self.sonar1_offset_y = self.node.declare_parameter("~sonar1_offset_y",-0.19).value
+        self.sonar1_offset_yaw = rospy.get_param("~sonar1_offset_yaw", 0.0)
+        self.sonar1_offset_x = rospy.get_param("~sonar1_offset_x", 0.27)
+        self.sonar1_offset_y = rospy.get_param("~sonar1_offset_y",-0.19)
 
 
-        self.sonar2_offset_yaw = self.node.declare_parameter("~sonar2_offset_yaw", 1.57).value
-        self.sonar2_offset_x = self.node.declare_parameter("~sonar2_offset_x", 0.24).value
-        self.sonar2_offset_y = self.node.declare_parameter("~sonar2_offset_y", 0.15).value
+        self.sonar2_offset_yaw = rospy.get_param("~sonar2_offset_yaw", 1.57)
+        self.sonar2_offset_x = rospy.get_param("~sonar2_offset_x", 0.24)
+        self.sonar2_offset_y = rospy.get_param("~sonar2_offset_y", 0.15)
 
-        self.sonar3_offset_yaw = self.node.declare_parameter("~sonar3_offset_yaw", -1.57).value
-        self.sonar3_offset_x = self.node.declare_parameter("~sonar3_offset_x", 0.24).value
-        self.sonar3_offset_y = self.node.declare_parameter("~sonar3_offset_y", -0.15).value
+        self.sonar3_offset_yaw = rospy.get_param("~sonar3_offset_yaw", -1.57)
+        self.sonar3_offset_x = rospy.get_param("~sonar3_offset_x", 0.24)
+        self.sonar3_offset_y = rospy.get_param("~sonar3_offset_y", -0.15)
 
-        self.sonar4_offset_yaw = self.node.declare_parameter("~sonar4_offset_yaw", 3.14).value
-        self.sonar4_offset_x = self.node.declare_parameter("~sonar4_offset_x", -0.1).value
-        self.sonar4_offset_y = self.node.declare_parameter("~sonar4_offset_y",  0).value
+        self.sonar4_offset_yaw = rospy.get_param("~sonar4_offset_yaw", 3.14)
+        self.sonar4_offset_x = rospy.get_param("~sonar4_offset_x", -0.1)
+        self.sonar4_offset_y = rospy.get_param("~sonar4_offset_y",  0)
 
 
         self.sonar_cloud = [[100.0,0.105,0.1],[100.0,-0.105,0.1],[0.2,100.0,0.1],[0.2,-100.0,0.1],[-100.0,0.0,0.1]]
@@ -640,79 +642,79 @@ class BaseController:
         self.sonar_cloud[4][1] = self.sonar4_offset_y + self.sonar_maxval * math.sin(self.sonar4_offset_yaw)
         self.sonar_cloud[4][2] = self.sonar_height
 
-        self.imu_frame_id = self.node.declare_parameter('imu_frame_id', 'imu_base').value
-        self.imu_offset = self.node.declare_parameter('imu_offset', 1.01).value
-        self.imuPub = self.node.create_publisher(Imu, 'imu', qos_profile)
-        self.imuAnglePub = self.node.create_publisher(Float32, 'imu_angle', qos_profile)
+        self.imu_frame_id = rospy.get_param('imu_frame_id', 'imu_base')
+        self.imu_offset = rospy.get_param('imu_offset', 1.01)
+        self.imuPub = rospy.Publisher('imu', Imu, queue_size=5)
+        self.imuAnglePub = rospy.Publisher('imu_angle', Float32, queue_size=5)
         # Set up the odometry broadcaster
-        self.odomPub = self.node.create_publisher(Odometry,'odom',  self.qos_profile)
-        self.odomBroadcaster = TransformBroadcaster(self.node)
+        self.odomPub = rospy.Publisher('odom', Odometry, queue_size=5)
+        self.odomBroadcaster = TransformBroadcaster()
         
-        self.node.get_logger().info("Started base controller for a base of " + str(self.wheel_track) + "m wide with " + str(self.encoder_resolution) + " ticks per rev")
-        self.node.get_logger().info("Publishing odometry data at: " + str(self.rate) + " Hz using " + str(self.base_frame) + " as base frame")
+        rospy.loginfo("Started base controller for a base of " + str(self.wheel_track) + "m wide with " + str(self.encoder_resolution) + " ticks per rev")
+        rospy.loginfo("Publishing odometry data at: " + str(self.rate) + " Hz using " + str(self.base_frame) + " as base frame")
 
-        self.lEncoderPub = self.node.create_publisher(UInt16,'Lencoder',  self.qos_profile)
-        self.rEncoderPub = self.node.create_publisher(UInt16,'Rencoder',  self.qos_profile)
-        self.lVelPub = self.node.create_publisher( Int16,'Lvel', self.qos_profile)
-        self.rVelPub = self.node.create_publisher( Int16,'Rvel', self.qos_profile)
+        self.lEncoderPub = rospy.Publisher('Lencoder', UInt16, queue_size=5)
+        self.rEncoderPub = rospy.Publisher('Rencoder', UInt16, queue_size=5)
+        self.lVelPub = rospy.Publisher('Lvel', Int16, queue_size=5)
+        self.rVelPub = rospy.Publisher('Rvel', Int16, queue_size=5)
         #self.Stm32.BEEP_SOUND()
 
         self.SUCCESS = 0
         self.FAIL = -1
 
         self.voltage_val = 0
-        self.voltage_pub = self.node.create_publisher(Int32,'voltage_value',   self.qos_profile)
-        self.voltage_percentage_pub = self.node.create_publisher(Int32,'voltage_percentage',   self.qos_profile)
+        self.voltage_pub = rospy.Publisher('voltage_value', Int32, queue_size=5)
+        self.voltage_percentage_pub = rospy.Publisher('voltage_percentage', Int32, queue_size=5)
         self.voltage_str = ""
-        self.voltage_str_pub = self.node.create_publisher( String,'voltage_str',  self.qos_profile)
+        self.voltage_str_pub = rospy.Publisher('voltage_str', String, queue_size=5)
    
         self.emergencybt_val = 0
-        self.emergencybt_pub = self.node.create_publisher(Int16,'emergencybt_status',   self.qos_profile)
-        self.recharge_ir_pub = self.node.create_publisher(Int16, 'recharge_ir_status',  self.qos_profile)
+        self.emergencybt_pub = rospy.Publisher('emergencybt_status', Int16, queue_size=5)
+        self.recharge_ir_pub = rospy.Publisher('recharge_ir_status', Int16, queue_size=5)
 
-        self.node.create_subscription(Int16,"recharge_handle",  self.handleRechargeCallback, self.qos_profile)
+        rospy.Subscriber("recharge_handle", Int16, self.handleRechargeCallback)
         self.is_recharge = False
         self.recharge_status = 0
-        self.recharge_pub = self.node.create_publisher(Int16,'recharge_status',   self.qos_profile)
+        self.recharge_pub = rospy.Publisher('recharge_status', Int16, queue_size=5)
 
-        self.node.create_subscription(Int16,"imu_reset",  self.resetImuCallback, self.qos_profile)
-        self.imu_angle_pub = self.node.create_publisher(Int16,'imu_angle_Stm32',   self.qos_profile)
-        self.imu_pub = self.node.create_publisher(String,'imu_val',   self.qos_profile)
+        rospy.Subscriber("imu_reset", Int16, self.resetImuCallback)
+        self.imu_angle_pub = rospy.Publisher('imu_angle_Stm32', Int16, queue_size=5)
+        self.imu_pub = rospy.Publisher('imu_val', String, queue_size=5)
 
-        self.node.create_subscription(Int16,"ware_version_req",  self.reqVersionCallback, self.qos_profile)
-        self.version_pub = self.node.create_publisher( String,'ware_version',  self.qos_profile)
+        rospy.Subscriber("ware_version_req", Int16, self.reqVersionCallback)
+        self.version_pub = rospy.Publisher('ware_version', String, queue_size=5)
 
-        self.pid_p_pub = self.node.create_publisher(String, 'pid_p',  self.qos_profile)
-        self.pid_i_pub = self.node.create_publisher(String, 'pid_i',  self.qos_profile)
-        self.pid_d_pub = self.node.create_publisher(String,'pid_d',   self.qos_profile)
-        self.node.create_subscription(String,"pid_req",  self.reqPidCallback, self.qos_profile)
-        self.node.create_subscription( String, "pid_set",self.reqSetPidCallback, self.qos_profile)
+        self.pid_p_pub = rospy.Publisher('pid_p', String, queue_size=5)
+        self.pid_i_pub = rospy.Publisher('pid_i', String, queue_size=5)
+        self.pid_d_pub = rospy.Publisher('pid_d', String, queue_size=5)
+        rospy.Subscriber("pid_req", String, self.reqPidCallback)
+        rospy.Subscriber("pid_set", String, self.reqSetPidCallback)
 
-        self.node.create_subscription(Int16,"encoder_reset",  self.resetEncoderCallback, self.qos_profile)
-        self.node.create_subscription(Int16,"system_reset",  self.resetSystemCallback, self.qos_profile)
+        rospy.Subscriber("encoder_reset", Int16, self.resetEncoderCallback)
+        rospy.Subscriber("system_reset", Int16, self.resetSystemCallback)
 
         self.recharge_way=0
-        self.recharge_way_pub = self.node.create_publisher( Int32,'recharge_way', self.qos_profile)
+        self.recharge_way_pub = rospy.Publisher('recharge_way', Int32, queue_size=5)
         self.lwheel_ele = 0
         self.rwheel_ele = 0
-        self.lwheel_ele_pub = self.node.create_publisher(Int32,'lwheel_ele',  self.qos_profile)
-        self.rwheel_ele_pub = self.node.create_publisher(Int32,'rwheel_ele',  self.qos_profile)
+        self.lwheel_ele_pub = rospy.Publisher('lwheel_ele', Int32, queue_size=5)
+        self.rwheel_ele_pub = rospy.Publisher('rwheel_ele', Int32, queue_size=5)
 
-        self.ir0_pub = self.node.create_publisher(Int32, 'ir0',  self.qos_profile)
-        self.ir1_pub = self.node.create_publisher(Int32,  'ir1', self.qos_profile)
-        self.ir2_pub = self.node.create_publisher(Int32, 'ir2',  self.qos_profile)
-        self.ir3_pub = self.node.create_publisher(Int32, 'ir3',  self.qos_profile)
-        self.ir4_pub = self.node.create_publisher(  Int32, 'ir4', self.qos_profile)
-        self.ir5_pub = self.node.create_publisher( Int32, 'ir5',self.qos_profile)
+        self.ir0_pub = rospy.Publisher('ir0', Int32, queue_size=5)
+        self.ir1_pub = rospy.Publisher('ir1', Int32, queue_size=5)
+        self.ir2_pub = rospy.Publisher('ir2', Int32, queue_size=5)
+        self.ir3_pub = rospy.Publisher('ir3', Int32, queue_size=5)
+        self.ir4_pub = rospy.Publisher('ir4', Int32, queue_size=5)
+        self.ir5_pub = rospy.Publisher('ir5', Int32, queue_size=5)
 
         self.stm32_version=0
         _,stm32_hardware1,stm32_hardware0,stm32_software1,stm32_software0=self.Stm32.get_hardware_version()
-        self.slam_project_version = self.node.declare_parameter("~slam_project_version",0).value
-        self.node.get_logger().info ("*************************************************")
-        self.node.get_logger().info ("stm32 hardware_version is "+str(stm32_hardware0)+str(".")+str(stm32_hardware1))
-        self.node.get_logger().info ("stm32 software_version is "+str(stm32_software0)+str(".")+str(stm32_software1))
-        self.node.get_logger().info ("slam version is "+str(self.slam_project_version))
-        self.node.get_logger().info ("*************************************************")
+        self.slam_project_version = rospy.get_param("~slam_project_version",0)
+        rospy.loginfo ("*************************************************")
+        rospy.loginfo ("stm32 hardware_version is "+str(stm32_hardware0)+str(".")+str(stm32_hardware1))
+        rospy.loginfo ("stm32 software_version is "+str(stm32_software0)+str(".")+str(stm32_software1))
+        rospy.loginfo ("slam version is "+str(self.slam_project_version))
+        rospy.loginfo ("*************************************************")
 
     def handleRechargeCallback(self, req):
         if req.data==1:
@@ -720,40 +722,40 @@ class BaseController:
                 res = self.Stm32.start_automatic_recharge()
                 self.is_recharge = True
             except:
-                self.node.get_logger("start automatic recharge exception ")
+                rospy.logerr("start automatic recharge exception ")
         else:
             try:
                 res = self.Stm32.stop_automatic_recharge()
                 self.is_recharge = False
             except:
-                self.node.get_logger("stop automatic recharge exception ")
+                rospy.logerr("stop automatic recharge exception ")
 
     def resetEncoderCallback(self, req):
         if req.data==1:
             try:
                 res = self.Stm32.reset_encoders()
                 if res==self.FAIL:
-                    self.node.get_logger("reset encoder failed ")
+                    rospy.logerr("reset encoder failed ")
             except:
-                self.node.get_logger("request to reset encoder exception ")
+                rospy.logerr("request to reset encoder exception ")
 
     def resetSystemCallback(self, req):
         if req.data==1:
             try:
                 res = self.Stm32.reset_system()
                 if res==self.FAIL:
-                    self.node.get_logger("reset system failed ")
+                    rospy.logerr("reset system failed ")
             except:
-                    self.node.get_logger("request to reset system exception ")
+                    rospy.logerr("request to reset system exception ")
 
     def resetImuCallback(self, req):
         if req.data==1:
             try:
                 res = self.Stm32.reset_imu()
                 if res==self.FAIL:
-                    self.node.get_logger("reset imu failed ")
+                    rospy.logerr("reset imu failed ")
             except:
-                self.node.get_logger("request to reset imu exception ")
+                rospy.logerr("request to reset imu exception ")
 
     def reqVersionCallback(self, req):
         if req.data==1:
@@ -761,19 +763,19 @@ class BaseController:
                 res,ver0,ver1,ver2,ver3 = self.Stm32.get_hardware_version()
                 self.version_pub.publish(str(ver0)+"."+str(ver1)+"-"+str(ver2)+"."+str(ver3))
                 if res==self.FAIL:
-                    self.node.get_logger("request the version of hardware failed ")
+                    rospy.logerr("request the version of hardware failed ")
             except:
                 self.version_pub.publish("")
-                self.node.get_logger("request the version of hardware exception ")
+                rospy.logerr("request the version of hardware exception ")
         if req.data==2:
             try:
                 res,ver0,ver1,ver2,ver3 = self.Stm32.get_firmware_version()
                 self.version_pub.publish(str(ver0)+"."+str(ver1)+"-"+str(ver2)+"."+str(ver3))
                 if res==self.FAIL:
-                    self.node.get_logger("request the version of firmware failed ")
+                    rospy.logerr("request the version of firmware failed ")
             except:
                 self.version_pub.publish("")
-                self.node.get_logger("request the version of firmware exception ")
+                rospy.logerr("request the version of firmware exception ")
 
     def reqPidCallback(self, req):
         if req.data=='P':
@@ -781,28 +783,28 @@ class BaseController:
                 res,pl,pr = self.Stm32.get_pid(0x07)
                 self.pid_p_pub.publish(str(pl) + "," + str(pr))
                 if res==self.FAIL:
-                    self.node.get_logger("request the P of PID failed ")
+                    rospy.logerr("request the P of PID failed ")
             except:
                     self.pid_p_pub.publish("")
-                    self.node.get_logger("request the P of PID exception ")
+                    rospy.logerr("request the P of PID exception ")
         if req.data=='I':
             try:
                 res,il,ir = self.Stm32.get_pid(0x09)
                 self.pid_i_pub.publish(str(il) + "," + str(ir))
                 if res==self.FAIL:
-                    self.node.get_logger("request the I of PID failed ")
+                    rospy.logerr("request the I of PID failed ")
             except:
                     self.pid_i_pub.publish("")
-                    self.node.get_logger("request the I of PID exception ")
+                    rospy.logerr("request the I of PID exception ")
         if req.data=='D':
             try:
                 res,dl,dr = self.Stm32.get_pid(0x0B)
                 self.pid_d_pub.publish(str(dl) + "," + str(dr))
                 if res==self.FAIL:
-                    self.node.get_logger("request the D of PID failed ")
+                    rospy.logerr("request the D of PID failed ")
             except:
                 self.pid_d_pub.publish("")
-                self.node.get_logger("request the D of PID exception ")
+                rospy.logerr("request the D of PID exception ")
 
     def reqSetPidCallback(self, req):
         if req.data!='':
@@ -811,23 +813,23 @@ class BaseController:
                 try:
                     res=self.Stm32.set_pid(0x06, float(set_list[1]), float(set_list[2]))
                     if res==self.FAIL:
-                        self.node.get_logger("set the P of PID failed ")
+                        rospy.logerr("set the P of PID failed ")
                 except:
-                    self.node.get_logger("set the P of PID exception ")
+                    rospy.logerr("set the P of PID exception ")
             if set_list[0]=='I':
                 try:
                     res=self.Stm32.set_pid(0x08, float(set_list[1]), float(set_list[2]))
                     if res==self.FAIL:
-                        self.node.get_logger("set the I of PID failed ")
+                        rospy.logerr("set the I of PID failed ")
                 except:
-                    self.node.get_logger("set the I of PID exception ")
+                    rospy.logerr("set the I of PID exception ")
             if set_list[0]=='D':
                 try:
                     res=self.Stm32.set_pid(0x0A, float(set_list[1]), float(set_list[2]))
                     if res==self.FAIL:
-                        self.node.get_logger("set the D of PID failed ")
+                        rospy.logerr("set the D of PID failed ")
                 except:
-                    self.node.get_logger("set the D of PID exception ")
+                    rospy.logerr("set the D of PID exception ")
         
     def volTransPerentage(self, vo):
          if(vo == -1):
@@ -926,16 +928,16 @@ class BaseController:
         
 
     def poll(self):
-        now = self.node.get_clock().now()
+        now = rospy.Time.now()
         if now > self.t_next:
             try:
                 stat_, left_enc,right_enc = self.Stm32.get_encoder_counts()#
-                #node.get_logger().info("left_enc:  " + str(left_enc)+" right_enc: " + str(right_enc))
+                #rospy.loginfo("left_enc:  " + str(left_enc)+" right_enc: " + str(right_enc))
                 self.lEncoderPub.publish(left_enc)
                 self.rEncoderPub.publish(right_enc)
             except:
                 self.bad_encoder_count += 1
-                self.node.get_logger("Encoder exception count: " + str(self.bad_encoder_count))
+                rospy.logerr("Encoder exception count: " + str(self.bad_encoder_count))
                 return
                       
             try:
@@ -948,13 +950,13 @@ class BaseController:
                 self.voltage_pub.publish(self.voltage_val)
                 self.voltage_str_pub.publish(str(vol1) + "," + str(vol2) + "," + str(vol3) + "," + str(vol4) + "," + str(vol5) + "," + str(vol6))
                 self.voltage_percentage_pub.publish(self.volTransPerentage(self.voltage_val))
-                #node.get_logger().info("voltage_Perentage:" + str(self.volTransPerentage(self.voltage_val)))
+                #rospy.loginfo("voltage_Perentage:" + str(self.volTransPerentage(self.voltage_val)))
             except:
                 self.voltage_pub.publish(-1)
                 self.voltage_str_pub.publish("")
                 self.lwheel_ele_pub.publish(-1)
                 self.rwheel_ele_pub.publish(-1)
-                self.node.get_logger("get voltage exception")
+                rospy.logerr("get voltage exception")
 
             try:
                 res,ir1,ir2,ir3,ir4,ir5,ir6 = self.Stm32.get_infrareds()
@@ -971,7 +973,7 @@ class BaseController:
                 self.ir3_pub.publish(-1)
                 self.ir4_pub.publish(-1)
                 self.ir5_pub.publish(-1)
-                self.node.get_logger("get infrared ray exception")
+                rospy.logerr("get infrared ray exception")
 
             try:
                 res,way = self.Stm32.get_recharge_way()
@@ -981,7 +983,7 @@ class BaseController:
             except Exception as e:
                 #print str(e)
                 self.recharge_way_pub.publish(-1)
-                self.node.get_logger("get recharge_way  exception")
+                rospy.logerr("get recharge_way  exception")
 
             try:
                 res,status = self.Stm32.get_automatic_recharge_status()
@@ -991,7 +993,7 @@ class BaseController:
                 self.recharge_pub.publish(self.recharge_status)
             except:
                 self.recharge_pub.publish(-1)
-                self.node.get_logger("get recharge_status  exception")
+                rospy.logerr("get recharge_status  exception")
 
             if (not self.is_recharge):
                 try:
@@ -1003,14 +1005,14 @@ class BaseController:
                     self.emergencybt_val = -1
                     self.emergencybt_pub.publish(-1)
                     self.recharge_ir_pub.publish(-1)
-                    self.node.get_logger("get emergencybt  exception")
+                    rospy.logerr("get emergencybt  exception")
 
             if (self.useSonar == True) :
                 pcloud = PointCloud2()
                 try:
                     stat_, self.sonar_r0, self.sonar_r1, self.sonar_r2, self.sonar_r3, self.sonar_r4,_ = self.Stm32.get_sonar_range()
                     #self.sonar_r3=80 
-                    #node.get_logger().info("sonar0: " + str(self.sonar_r0)+" sonar1: " + str(self.sonar_r1)+" sonar2: " + str(self.sonar_r2)+" sonar3: " + str(self.sonar_r3)+" sonar4: " + str(self.sonar_r4))  
+                    #rospy.loginfo("sonar0: " + str(self.sonar_r0)+" sonar1: " + str(self.sonar_r1)+" sonar2: " + str(self.sonar_r2)+" sonar3: " + str(self.sonar_r3)+" sonar4: " + str(self.sonar_r4))  
 
                     sonar0_range = Range()
                     sonar0_range.header.stamp = now
@@ -1119,19 +1121,19 @@ class BaseController:
                         self.sonar_cloud[4][1] = self.sonar4_offset_y + sonar4_range.range * math.sin(self.sonar4_offset_yaw)
 
                     pcloud.header.frame_id="/base_footprint"
-                    pcloud = PointCloud2.create_cloud_xyz32(pcloud.header, self.sonar_cloud)
+                    pcloud = pc2.create_cloud_xyz32(pcloud.header, self.sonar_cloud)
                     self.sonar_pub_cloud.publish(pcloud)
         
                 except:
-                    self.node.get_logger("Get Sonar exception")
+                    rospy.logerr("Get Sonar exception")
                     return
 
             #try:
             #    stat_, ir0, ir1, ir2, ir3, ir4, ir5 = self.Stm32.get_ir_range()
-            #    #node.get_logger().info("ir0: " + str(ir0)+" ir1: " + str(ir1)+" ir2: " + str(ir2)+" ir3: " + str(ir3)+" ir4: " + str(ir4)+" ir5: " + str(ir5))            
+            #    #rospy.loginfo("ir0: " + str(ir0)+" ir1: " + str(ir1)+" ir2: " + str(ir2)+" ir3: " + str(ir3)+" ir4: " + str(ir4)+" ir5: " + str(ir5))            
             #except:
             #    self.bad_encoder_count += 1
-            #    self.node.get_logger("Sonar exception count: " + str(self.bad_encoder_count))
+            #    rospy.logerr("Sonar exception count: " + str(self.bad_encoder_count))
 
             if (self.useImu == True) :
                 try:
@@ -1142,9 +1144,9 @@ class BaseController:
                     if yaw_vel>=32768:
                         yaw_vel = yaw_vel-65535
                     yaw_vel = yaw_vel/100.0
-                    #node.get_logger().info("yaw: " + str(yaw/100)+" yaw_vel: " + str(yaw_vel))     
+                    #rospy.loginfo("yaw: " + str(yaw/100)+" yaw_vel: " + str(yaw_vel))     
                     imu_data = Imu()  
-                    imu_data.header.stamp = self.node.get_clock().now()
+                    imu_data.header.stamp = rospy.Time.now()
                     imu_data.header.frame_id = self.imu_frame_id 
                     imu_data.orientation_covariance[0] = 1000000
                     imu_data.orientation_covariance[1] = 0
@@ -1172,7 +1174,7 @@ class BaseController:
        
                 except:
                     self.bad_encoder_count += 1
-                    self.node.get_logger("IMU exception count: " + str(self.bad_encoder_count))
+                    rospy.logerr("IMU exception count: " + str(self.bad_encoder_count))
                     return
             
 
@@ -1231,7 +1233,7 @@ class BaseController:
                 self.odomBroadcaster.sendTransform(
                   (self.x, self.y, 0), 
                   (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
-                  self.node.get_clock().now(),
+                  rospy.Time.now(),
                   self.base_frame,
                   "odom"
                 )
@@ -1260,7 +1262,7 @@ class BaseController:
 
             self.odomPub.publish(odom)
             
-            if now > (self.last_cmd_vel + rclpy.duration.Duration(seconds=self.timeout)):
+            if now > (self.last_cmd_vel + rospy.Duration(self.timeout)):
                 self.v_des_left = 0
                 self.v_des_right = 0
                 
@@ -1309,7 +1311,7 @@ class BaseController:
             
     def cmdVelCallback(self, req):
         # Handle velocity-based movement requests
-        self.last_cmd_vel = self.node.get_clock().now()
+        self.last_cmd_vel = rospy.Time.now()
         
         robot_cmd_vel = Twist()
         x = req.linear.x         # m/s
@@ -1335,12 +1337,12 @@ class BaseController:
             #sonar0
             if((self.sonar_r0<=self.safe_range_0 and self.sonar_r0>=2) and (x<0)):
                 x= 0.0
-                self.node.get_logger.warn("sonar0 smaller than safe_range_0, cannot back")
+                rospy.logwarn("sonar0 smaller than safe_range_0, cannot back")
             #sonar1
             if((self.sonar_r1<=self.safe_range_0 and self.sonar_r1>=2) and (x>0)):
                 x=0.0
                 th=0.2
-                self.node.get_logger.warn("sonar1 smaller than safe_range_0, only trun left")
+                rospy.logwarn("sonar1 smaller than safe_range_0, only trun left")
             
             if((self.sonar_r1<=self.safe_range_0 and self.sonar_r1>=2) and (th<0)):
                 x=0.0
@@ -1349,13 +1351,13 @@ class BaseController:
             if((self.sonar_r2<=self.safe_range_0 and self.sonar_r2>=2) and (x>0)):
                 x=0.0
                 th=0.2
-                self.node.get_logger.warn("sonar2 smaller than safe_range_0, only trun left")
+                rospy.logwarn("sonar2 smaller than safe_range_0, only trun left")
 
             #sonar3
             if((self.sonar_r3<=self.safe_range_0 and self.sonar_r3>=2) and (x>0)):
                 x=0.0
                 th=-0.2
-                self.node.get_logger.warn("sonar3 smaller than safe_range_0, only trun left")
+                rospy.logwarn("sonar3 smaller than safe_range_0, only trun left")
 
             if((self.sonar_r3<=self.safe_range_0 and self.sonar_r3>=2) and (th>0)):
                 x=0.0
@@ -1363,7 +1365,7 @@ class BaseController:
             #sonar4
             if((self.sonar_r4<=self.safe_range_0 and self.sonar_r0>=2) and (x<0)):
                 x= 0.0
-                self.node.get_logger.warn("sonar4 smaller than safe_range_0, cannot back")
+                rospy.logwarn("sonar4 smaller than safe_range_0, cannot back")
 
 
 
@@ -1405,40 +1407,37 @@ class BaseController:
 
 class Stm32ROS():
     def __init__(self):
-        rclpy.init(args=sys.argv)
-        self.node = rclpy.create_node('Stm32')
+        rospy.init_node('Stm32', log_level=rospy.DEBUG)
                 
         # Cleanup when termniating the node
-        rclpy.get_default_context().on_shutdown(self.shutdown)
+        rospy.on_shutdown(self.shutdown)
         
-        self.port = self.node.declare_parameter("~port", "/dev/ttyUSB0").value
-        self.baud = int(self.node.declare_parameter("~baud", 115200).value)
-        self.timeout = self.node.declare_parameter("~timeout", 0.5).value
-        self.base_frame = self.node.declare_parameter("~base_frame", 'base_footprint').value
+        self.port = rospy.get_param("~port", "/dev/ttyUSB0")
+        self.baud = int(rospy.get_param("~baud", 115200))
+        self.timeout = rospy.get_param("~timeout", 0.5)
+        self.base_frame = rospy.get_param("~base_frame", 'base_footprint')
 
         # Overall loop rate: should be faster than fastest sensor rate
-        self.rate = int(self.node.declare_parameter("~rate", 50).value)
-        self.r = self.node.create_rate(self.rate)
+        self.rate = int(rospy.get_param("~rate", 50))
+        r = rospy.Rate(self.rate)
 
         # Rate at which summary SensorState message is published. Individual sensors publish
         # at their own rates.        
-        self.sensorstate_rate = int(self.node.declare_parameter("~sensorstate_rate", 10).value)
+        self.sensorstate_rate = int(rospy.get_param("~sensorstate_rate", 10))
         
-        self.use_base_controller = self.node.declare_parameter("~use_base_controller", True).value
+        self.use_base_controller = rospy.get_param("~use_base_controller", True)
         
         
         # Set up the time for publishing the next SensorState message
-        now = rclpy.clock.Clock().now()
-        self.duration_seconds = 1.0 / self.sensorstate_rate
-        self.t_delta_sensors = rclpy.duration.Duration(seconds=self.duration_seconds)
+        now = rospy.Time.now()
+        self.t_delta_sensors = rospy.Duration(1.0 / self.sensorstate_rate)
         self.t_next_sensors = now + self.t_delta_sensors
         
         # Initialize a Twist message
         self.cmd_vel = Twist()
   
         # A cmd_vel publisher so we can stop the robot when shutting down
-        self.qos_profile = QoSProfile(depth=5)
-        self.cmd_vel_pub = self.node.create_publisher(Twist,'cmd_vel', self.qos_profile)
+        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
         
         # Initialize the controlller
         self.controller = Stm32(self.port, self.baud, self.timeout)
@@ -1446,36 +1445,33 @@ class Stm32ROS():
         # Make the connection
         self.controller.connect()
         
-        self.node.get_logger().info("Connected to Stm32 on port " + self.port + " at " + str(self.baud) + " baud")
+        rospy.loginfo("Connected to Stm32 on port " + self.port + " at " + str(self.baud) + " baud")
      
         # Reserve a thread lock
         mutex = _thread.allocate_lock()
               
         # Initialize the base controller if used
         if self.use_base_controller:
-            self.myBaseController = BaseController(self.controller, self.base_frame,self.node,self.qos_profile)
+            self.myBaseController = BaseController(self.controller, self.base_frame)
     
         # Start polling the sensors and base controller
-        while rclpy.ok():
+        while not rospy.is_shutdown():
+                    
             if self.use_base_controller:
                 mutex.acquire()
                 self.myBaseController.poll()
                 mutex.release()
-            self.r.sleep()
+            r.sleep()
     
     def shutdown(self):
         # Stop the robot
         try:
-            self.node.get_logger().info("Stopping the robot...")
+            rospy.loginfo("Stopping the robot...")
             self.cmd_vel_pub.Publish(Twist())
-            rclpy.sleep(2)
+            rospy.sleep(2)
         except:
             pass
-        self.node.get_logger().info("Shutting down Stm32 Node...")
+        rospy.loginfo("Shutting down Stm32 Node...")
         
-
-def main():
-    myStm32 = Stm32ROS()
-
 if __name__ == '__main__':
-    main()
+    myStm32 = Stm32ROS()

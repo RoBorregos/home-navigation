@@ -1,0 +1,3 @@
+DashgoDriver:
+  ros_parameters:
+    my_parameter: "Gerardo"

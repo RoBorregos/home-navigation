@@ -20,11 +20,13 @@ setup(
     maintainer_email='A00838645@tec.mx',
     description='TODO: Package description',
     license='TODO: License declaration',
-    tests_require=['pytest'],
+    # tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'my_node = my_package.my_node:main',
-            'dashgo_driver = my_package.dashgo_driver:main'
+            'dashgo_driver = my_package.dashgo_driver:main',
+            'dashgo_driver2 = my_package.dashgo_driver2:main',
+
         ],
     },
 )
