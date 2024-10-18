@@ -8,7 +8,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     # File paths
-    dashgo_driver_config_path = os.path.join(get_package_share_directory('my_package'), 'config', 'my_dashgo_params.yaml')
+    dashgo_driver_config_path = os.path.join(get_package_share_directory('my_package'), 'config', 'my_dashgo_params_imu.yaml') 
     # yocs_velocity_smoother_config_path = os.path.join(get_package_share_directory('dashgo_driver'), 'config', 'yocs_velocity_smoother.yaml')
     # velocity_smoother_launch_path = os.path.join(get_package_share_directory('yocs_velocity_smoother'), 'launch', 'velocity_smoother.launch.py')
 
