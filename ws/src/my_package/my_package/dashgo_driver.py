@@ -506,7 +506,7 @@ class Stm32:
 
 """ Class to receive Twist commands and publish Odometry data """
 class BaseController:
-    def __init__(self, Stm32, base_frame):
+    def __init__(self, Stm32, base_frame,node):
         self.Stm32 = Stm32
         self.base_frame = base_frame
         self.rate = float(self.node.declare_parameter("~base_controller_rate", 10).value)
@@ -1455,7 +1455,7 @@ class Stm32ROS():
               
         # Initialize the base controller if used
         if self.use_base_controller:
-            self.myBaseController = BaseController(self.controller, self.base_frame)
+            self.myBaseController = BaseController(self.controller, self.base_frame,self.node)
     
         # Start polling the sensors and base controller
         while not rclpy.is_shutdown():
