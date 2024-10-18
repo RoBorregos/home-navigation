@@ -32,6 +32,27 @@ FROM dustynv/ros:humble-ros-base-l4t-r32.7.1
 # RUN echo "alias master-nano='export ROS_MASTER_URI=http://192.168.31.123:11311'" >> /home/ros/.bashrc
 # RUN echo "alias rosip-nano='export ROS_IP=192.168.31.123'" >> /home/ros/.bashrc
 # RUN echo "alias rosip-xavier='export ROS_IP=192.168.31.23'" >> /home/ros/.bashrc
+ARG USERNAME=ros
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create a non-root user
+RUN groupadd --gid $USER_GID $USERNAME \
+  && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
+  # Add sudo support for the non-root user
+  && apt-get update \
+  && apt-get install -y sudo \
+  && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME\
+  && chmod 0440 /etc/sudoers.d/$USERNAME \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set up autocompletion for user
+RUN apt-get update && apt-get install -y git-core bash-completion \
+  && echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc \
+  && echo "if [ -f /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash ]; then source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash; fi" >> /home/$USERNAME/.bashrc \
+  && rm -rf /var/lib/apt/lists/* 
+
+FROM user AS ros
 
 RUN mkdir /workspace
 
