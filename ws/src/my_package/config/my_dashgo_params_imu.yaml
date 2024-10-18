@@ -1,4 +1,4 @@
-/dashgo_driver:
+Stm32:
   ros_parameters:
     port: /dev/ttyUSB0
     baud: 115200

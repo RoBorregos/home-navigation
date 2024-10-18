@@ -15,6 +15,10 @@ def generate_launch_description():
             executable='dashgo_driver2',
             name='DashgoDriver',
             output='screen',
-            parameters=[config],
+            emulate_tty=True,
+            parameters=[
+                # {'my_parameter': 'test'},
+                config
+            ],
         ),
     ])
