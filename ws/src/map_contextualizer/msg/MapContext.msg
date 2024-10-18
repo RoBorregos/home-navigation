@@ -1,2 +1,0 @@
-Room[] rooms
-string name

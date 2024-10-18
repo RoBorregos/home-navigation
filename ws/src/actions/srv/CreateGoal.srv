@@ -1,5 +1,0 @@
-geometry_msgs/PoseStamped target
-float64 x_offset
-float64 y_offset
----
-geometry_msgs/Pose goal

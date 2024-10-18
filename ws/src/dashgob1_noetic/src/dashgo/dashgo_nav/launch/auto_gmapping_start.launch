@@ -1,3 +1,0 @@
-<launch>
-  <node pkg="hector_exploration_node" type="move_base_controller.py" name="exploration_controller" output="screen"/>
-</launch>

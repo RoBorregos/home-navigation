@@ -1,6 +1,0 @@
-[submodule "ws/src/ira_laser_tools"]
-	path = ws/src/ira_laser_tools
-	url = https://github.com/iralabdisco/ira_laser_tools.git
-[submodule "ws/src/home-interfaces"]
-	path = ws/src/home-interfaces
-	url = https://github.com/RoBorregos/home-interfaces.git
