@@ -646,8 +646,8 @@ class BaseController:
 
         self.imu_frame_id = self.node.declare_parameter('imu_frame_id', 'imu_base').value
         self.imu_offset = self.node.declare_parameter('imu_offset', 1.01).value
-        self.imuPub = self.node.declare_parameter('imu', Imu, queue_size=5).value
-        self.imuAnglePub = self.node.declare_parameter('imu_angle', Float32, queue_size=5).value
+        self.imuPub = self.node.declare_parameter('imu', Imu, self.qos_profile).value
+        self.imuAnglePub = self.node.declare_parameter('imu_angle', Float32, self.qos_profile).value
         # Set up the odometry broadcaster
         self.odomPub = self.node.create_publisher(Odometry,'odom',  self.qos_profile)
         self.odomBroadcaster = TransformBroadcaster()
