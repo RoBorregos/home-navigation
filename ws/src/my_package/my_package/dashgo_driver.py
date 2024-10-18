@@ -509,6 +509,7 @@ class BaseController:
     def __init__(self, Stm32, base_frame,node):
         self.Stm32 = Stm32
         self.base_frame = base_frame
+        self.node = node
         self.rate = float(self.node.declare_parameter("~base_controller_rate", 10).value)
         self.timeout = self.node.declare_parameter("~base_controller_timeout", 1.0).value
         self.stopped = False
