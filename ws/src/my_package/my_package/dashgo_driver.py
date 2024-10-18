@@ -1460,13 +1460,12 @@ class Stm32ROS():
             self.myBaseController = BaseController(self.controller, self.base_frame,self.node,self.qos_profile)
     
         # Start polling the sensors and base controller
-        while not rclpy.is_shutdown():
-                    
+        while rclpy.ok():
             if self.use_base_controller:
                 mutex.acquire()
                 self.myBaseController.poll()
                 mutex.release()
-            r.sleep()
+            self.r.sleep()
     
     def shutdown(self):
         # Stop the robot
