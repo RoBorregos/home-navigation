@@ -544,7 +544,7 @@ class BaseController:
         self.l_wheel_mult = 0
         self.r_wheel_mult = 0
                         
-        now = self.get_clock().now()   
+        now = self.node.get_clock().now()   
         self.then = now # time for determining dx/dy
         self.duration_temp = 1.0/self.rate
         self.t_delta = rclpy.duration.Duration(seconds=self.duration_temp)
@@ -929,7 +929,7 @@ class BaseController:
         
 
     def poll(self):
-        now = self.get_clock().now()
+        now = self.node.get_clock().now()
         if now > self.t_next:
             try:
                 stat_, left_enc,right_enc = self.Stm32.get_encoder_counts()#
@@ -1147,7 +1147,7 @@ class BaseController:
                     yaw_vel = yaw_vel/100.0
                     #node.get_logger().info("yaw: " + str(yaw/100)+" yaw_vel: " + str(yaw_vel))     
                     imu_data = Imu()  
-                    imu_data.header.stamp = self.get_clock().now()
+                    imu_data.header.stamp = self.node.get_clock().now()
                     imu_data.header.frame_id = self.imu_frame_id 
                     imu_data.orientation_covariance[0] = 1000000
                     imu_data.orientation_covariance[1] = 0
@@ -1234,7 +1234,7 @@ class BaseController:
                 self.odomBroadcaster.sendTransform(
                   (self.x, self.y, 0), 
                   (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
-                  self.get_clock().now(),
+                  self.node.get_clock().now(),
                   self.base_frame,
                   "odom"
                 )
@@ -1312,7 +1312,7 @@ class BaseController:
             
     def cmdVelCallback(self, req):
         # Handle velocity-based movement requests
-        self.last_cmd_vel = self.get_clock().now()
+        self.last_cmd_vel = self.node.get_clock().now()
         
         robot_cmd_vel = Twist()
         x = req.linear.x         # m/s
