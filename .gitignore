@@ -1,7 +1,6 @@
 **/install
 **/devel
 **/build
+**/log
 *.user
-.vscode/
-/ws/.catkin_workspace
-/ws/src/CMakeLists.txt
+**/.vscode/
