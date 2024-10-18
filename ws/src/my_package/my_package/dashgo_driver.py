@@ -565,17 +565,17 @@ class BaseController:
 
         # Subscriptions
         #rospy.Subscriber("cmd_vel", Twist, self.cmdVelCallback)
-        self.node.create_subscription("smoother_cmd_vel", Twist, self.cmdVelCallback,self.qos_profile)
+        self.node.create_subscription(Twist,"smoother_cmd_vel",  self.cmdVelCallback,self.qos_profile)
         self.robot_cmd_vel_pub = self.node.create_publisher(Twist, 'robot_cmd_vel', self.qos_profile)
         
         # Clear any old odometry info
         self.Stm32.reset_encoders()
         self.Stm32.reset_IMU()
         
-        self.node.create_subscription("is_passed", Int16, self.isPassedCallback, self.qos_profile)
+        self.node.create_subscription( Int16,"is_passed", self.isPassedCallback, self.qos_profile)
         self.isPassed = True
 
-        self.node.create_subscription("is_passed_2", Int16, self.isPassedCallback_2, self.qos_profile)
+        self.node.create_subscription(Int16,"is_passed_2",  self.isPassedCallback_2, self.qos_profile)
         self.isPassed_2 = True
 
         ## sonar 
@@ -674,26 +674,26 @@ class BaseController:
         self.emergencybt_pub = self.node.create_publisher(Int16,'emergencybt_status',   self.qos_profile)
         self.recharge_ir_pub = self.node.create_publisher(Int16, 'recharge_ir_status',  self.qos_profile)
 
-        self.node.create_subscription("recharge_handle", Int16, self.handleRechargeCallback, self.qos_profile)
+        self.node.create_subscription(Int16,"recharge_handle",  self.handleRechargeCallback, self.qos_profile)
         self.is_recharge = False
         self.recharge_status = 0
         self.recharge_pub = self.node.create_publisher(Int16,'recharge_status',   self.qos_profile)
 
-        self.node.create_subscription("imu_reset", Int16, self.resetImuCallback, self.qos_profile)
+        self.node.create_subscription(Int16,"imu_reset",  self.resetImuCallback, self.qos_profile)
         self.imu_angle_pub = self.node.create_publisher(Int16,'imu_angle_Stm32',   self.qos_profile)
         self.imu_pub = self.node.create_publisher(String,'imu_val',   self.qos_profile)
 
-        self.node.create_subscription("ware_version_req", Int16, self.reqVersionCallback, self.qos_profile)
+        self.node.create_subscription(Int16,"ware_version_req",  self.reqVersionCallback, self.qos_profile)
         self.version_pub = self.node.create_publisher( String,'ware_version',  self.qos_profile)
 
         self.pid_p_pub = self.node.create_publisher(String, 'pid_p',  self.qos_profile)
         self.pid_i_pub = self.node.create_publisher(String, 'pid_i',  self.qos_profile)
         self.pid_d_pub = self.node.create_publisher(String,'pid_d',   self.qos_profile)
-        self.node.create_subscription("pid_req", String, self.reqPidCallback, self.qos_profile)
-        self.node.create_subscription("pid_set", String, self.reqSetPidCallback, self.qos_profile)
+        self.node.create_subscription(String,"pid_req",  self.reqPidCallback, self.qos_profile)
+        self.node.create_subscription( String, "pid_set",self.reqSetPidCallback, self.qos_profile)
 
-        self.node.create_subscription("encoder_reset", Int16, self.resetEncoderCallback, self.qos_profile)
-        self.node.create_subscription("system_reset", Int16, self.resetSystemCallback, self.qos_profile)
+        self.node.create_subscription(Int16,"encoder_reset",  self.resetEncoderCallback, self.qos_profile)
+        self.node.create_subscription(Int16,"system_reset",  self.resetSystemCallback, self.qos_profile)
 
         self.recharge_way=0
         self.recharge_way_pub = self.node.create_publisher( Int32,'recharge_way', self.qos_profile)
