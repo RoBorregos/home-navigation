@@ -1078,7 +1078,7 @@ class BaseController:
                 
             dt = now - self.then
             self.then = now
-            dt = dt.seconds_nanoseconds()[0] + dt.seconds_nanoseconds()[1] * 1e-9
+            dt = dt.nanoseconds * 1e-9
             if self.enc_left == None:
                 dright = 0
                 dleft = 0
