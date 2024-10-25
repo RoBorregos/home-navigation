@@ -1145,7 +1145,7 @@ class BaseController:
             odom.pose.pose.position.z = 0.0
             odom.pose.pose.orientation = quaternion
             odom.twist.twist.linear.x = vxy
-            odom.twist.twist.linear.y = 0
+            odom.twist.twist.linear.y = 0.0
             odom.twist.twist.angular.z = vth
             odom.pose.covariance = ODOM_POSE_COVARIANCE
             odom.twist.covariance = ODOM_TWIST_COVARIANCE
