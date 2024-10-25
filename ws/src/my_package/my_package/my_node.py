@@ -93,6 +93,18 @@ class Stm32:
             traceback.print_exc(file=sys.stdout)
             self.node.get_logger().error("Cannot connect to Stm32!")
             os._exit(1)
+
+    def get_baud(self):
+        ''' Get the current baud rate on the serial port.
+        '''
+        cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x01, 0x00) + struct.pack("B", 0x01)
+        if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
+           val, = struct.unpack('I', self.payload_args)
+           return  self.SUCCESS, val 
+        else:
+           # print("ACK", self.payload_ack, self.payload_ack == b'\x00', self.execute(cmd_str)==1)
+           return self.FAIL, 0
+        
     def reset_IMU(self):
         cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x01, 0x41) + struct.pack("B", 0x42)
         if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
@@ -161,6 +173,15 @@ class Stm32:
            return  self.SUCCESS
         else:
            return self.FAIL
+        
+    def get_check_sum(self,list):
+        list_len = len(list)
+        cs = 0
+        for i in range(list_len):
+            #print i, list[i]
+            cs += list[i]
+        cs=cs%255
+        return cs
 
     def reset_system(self):
         ''' reset system.
@@ -243,6 +264,24 @@ class Stm32:
         self.check_num = self.get_check_sum(self.check_list)
         cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x05, 0x04) + struct.pack("hh", left, right) + struct.pack("B", self.check_num)
         if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
+           return  self.SUCCESS
+        else:
+           return self.FAIL
+    def get_voltage(self):
+        ''' Get the current voltage the battery.
+        '''
+        cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x01, 0x12) + struct.pack("B", 0x13)
+        if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
+           vol1, vol2, vol3, vol4, vol5, vol6 = struct.unpack('6H', self.payload_args)
+           return  self.SUCCESS, vol1, vol2, vol3, vol4, vol5, vol6
+        else:
+           return self.FAIL, -1, -1, -1, -1, -1, -1
+    def stop_automatic_recharge(self):
+        ''' stop for automatic recharge.
+        '''
+        cmd_str=struct.pack("6B", self.HEADER0, self.HEADER1, 0x03, 0x10, 0x00, 0x00) + struct.pack("B", 0x13)
+        if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
+           print("stop")
            return  self.SUCCESS
         else:
            return self.FAIL
