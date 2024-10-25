@@ -1042,7 +1042,7 @@ class Stm32ROS(Node):
         super().__init__('DashgoDriver')
         #Declare all parameters
         self.declare_parameter("port", "/dev/ttyUSB0") 
-        self.declare_parameter("baudrate", "115200") 
+        self.declare_parameter("baudrate", 115200) 
         self.declare_parameter("timeout", 0.5)
         self.declare_parameter("base_frame", 'base_footprint')
         self.declare_parameter("rate", 50)
