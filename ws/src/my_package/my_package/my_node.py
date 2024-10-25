@@ -27,18 +27,19 @@ ODOM_TWIST_COVARIANCE = [1e-3, 0, 0, 0, 0, 0,
                          0, 0, 0, 1e6, 0, 0,
                          0, 0, 0, 0, 1e6, 0,
                          0, 0, 0, 0, 0, 1e3]
+N_ANALOG_PORTS = 6
+N_DIGITAL_PORTS = 12
 
 
 class Stm32:
-    N_ANALOG_PORTS = 6
-    N_DIGITAL_PORTS = 12
+    
     def __init__(self,node, port, baudrate, timeout,stm32_timeout):
         # Initialize the values
         self.port = port
         self.stm32_timeout = stm32_timeout
         self.baudrate = baudrate
         self.timeout = timeout
-        self = node
+        self.node = node
         self.PID_RATE = 30 # Do not change this!  It is a fixed property of the Stm32 PID controller.
         self.PID_INTERVAL = 1000 / 30
         self.WAITING_FF = 0
@@ -62,34 +63,34 @@ class Stm32:
         self.writeTimeout = timeout
         self.interCharTimeout = timeout / 30.
         # An array to cache analog sensor readings
-        self.analog_sensor_cache = [None] * self.N_ANALOG_PORTS
+        self.analog_sensor_cache = [None] * N_ANALOG_PORTS
          # An array to cache digital sensor readings
-        self.digital_sensor_cache = [None] * self.N_DIGITAL_PORTS
+        self.digital_sensor_cache = [None] * N_DIGITAL_PORTS
 
     def connect(self):
         try:
-            self.get_logger().info("Connecting to Stm32 on port", self.port, "...")
+            self.node.get_logger().info(f"Connecting to Stm32 on port {self.port} ...")
             # self.port = Serial(port="/dev/port1", baudrate=115200, timeout=0.1, writeTimeout=0.1)
             self.port = Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout, writeTimeout=self.writeTimeout)
             # The next line is necessary to give the firmware time to wake up.
             counter = 0
-            self.create_timer(1)
+            self.node.create_timer(1)
             state_, val = self.get_baud()
             while val!=self.baudrate:
-                self.create_timer(1)
+                self.node.create_timer(1)
                 state_, val  = self.get_baud()   
                 counter+=1
                 if counter >= self.stm32_timeout:
                     raise SerialException
-            self.get_logger().info("Connected at", self.baudrate)
-            self.get_logger().info("Stm32 is ready.")
+            self.node.get_logger().info("Connected at" + str(self.baudrate))
+            self.node.get_logger().info("Stm32 is ready.")
 
         except SerialException:
-            self.get_logger().error("Serial Exception:")
-            self.get_logger().error(sys.exc_info())
-            self.get_logger().error("Traceback follows:")
+            self.node.get_logger().error("Serial Exception:")
+            self.node.get_logger().error(sys.exc_info())
+            self.node.get_logger().error("Traceback follows:")
             traceback.print_exc(file=sys.stdout)
-            self.get_logger().error("Cannot connect to Stm32!")
+            self.node.get_logger().error("Cannot connect to Stm32!")
             os._exit(1)
     def reset_IMU(self):
         cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x01, 0x41) + struct.pack("B", 0x42)
@@ -256,7 +257,7 @@ class BaseController:
         sonar4_offset_x,sonar4_offset_y,imu_frame_id,imu_offset,PubEncoders,voltage_pub,
         show_statics
         ):
-        self = node
+        self.node = node
         self.voltage_pub = voltage_pub
         self.show_statics = show_statics
         self.useImu = useImu
@@ -302,7 +303,7 @@ class BaseController:
         self.SUCCESS = 0
         self.FAIL = -1
 
-        now = self.get_clock().now()
+        now = self.node.get_clock().now()
         self.t_delta = Duration(seconds=1.0 / self.rate)
         self.t_next = now + self.t_delta
 
@@ -336,12 +337,12 @@ class BaseController:
         self.recharge_status = 0
 
         if (self.use_smotheer == True):
-            self.robot_cmd_vel_pub = self.create_publisher(Twist, 'robot_cmd_vel', 5)
-            self.create_subscription(Int16,'is_passed',self.isPassedCallback) # Probably not needed
+            self.robot_cmd_vel_pub = self.node.create_publisher(Twist, 'robot_cmd_vel', 5)
+            self.node.create_subscription(Int16,'is_passed',self.isPassedCallback) # Probably not needed
             self.isPassed = True
-            self.create_subscription(Twist,'smoother_cmd_vel',self.cmdVelCallback)
+            self.node.create_subscription(Twist,'smoother_cmd_vel',self.cmdVelCallback)
         else:
-            self.create_subscription(Twist,'cmd_vel',self.cmdVelCallback)
+            self.node.create_subscription(Twist,'cmd_vel',self.cmdVelCallback)
 
         #RESET VALUES OF STM32
         self.Stm32.reset_encoders()
@@ -349,13 +350,13 @@ class BaseController:
 
         #SONAR DECLARATION
         if (self.useSonar == True):
-            self.sonar0_pub = self.create_publisher(Range, 'sonar0', 5)
-            self.sonar1_pub = self.create_publisher(Range, 'sonar1', 5)
-            self.sonar2_pub = self.create_publisher(Range, 'sonar2', 5)
-            self.sonar3_pub = self.create_publisher(Range, 'sonar3', 5)
-            self.sonar4_pub = self.create_publisher(Range, 'sonar4', 5)
+            self.sonar0_pub = self.node.create_publisher(Range, 'sonar0', 5)
+            self.sonar1_pub = self.node.create_publisher(Range, 'sonar1', 5)
+            self.sonar2_pub = self.node.create_publisher(Range, 'sonar2', 5)
+            self.sonar3_pub = self.node.create_publisher(Range, 'sonar3', 5)
+            self.sonar4_pub = self.node.create_publisher(Range, 'sonar4', 5)
 
-            self.sonar_pub_cloud = self.create_publisher(PointCloud2, 'sonar_cloudpoint', 5)
+            self.sonar_pub_cloud = self.node.create_publisher(PointCloud2, 'sonar_cloudpoint', 5)
            
             self.sonar_cloud[0][0] = self.sonar0_offset_x + self.sonar_maxval * math.cos(self.sonar0_offset_yaw)
             self.sonar_cloud[0][1] = self.sonar0_offset_y + self.sonar_maxval * math.sin(self.sonar0_offset_yaw)
@@ -378,62 +379,62 @@ class BaseController:
             self.sonar_cloud[4][2] = self.sonar_height
 
         #IMU DECLARATION
-        self.imuPub = self.create_publisher(Imu, 'imu', 5)
-        self.imuAnglePub = self.create_publisher(Float32, 'imu_angle', 5)
+        self.imuPub = self.node.create_publisher(Imu, 'imu', 5)
+        self.imuAnglePub = self.node.create_publisher(Float32, 'imu_angle', 5)
         #Set up odometry broadcaster
-        self.odomPub = self.create_publisher(Odometry, 'odom', 5)
+        self.odomPub = self.node.create_publisher(Odometry, 'odom', 5)
         self.odomBroadcaster = tf2_ros.TransformBroadcaster()
 
-        self.get_logger().info("Started base controller for a base of " + str(self.wheel_track) + "m wide with " + str(self.encoder_resolution) + " ticks per rev")
-        self.get_logger().info("Publishing odometry data at: " + str(self.rate) + " Hz using " + str(self.base_frame) + " as base frame")
+        self.node.get_logger().info("Started base controller for a base of " + str(self.wheel_track) + "m wide with " + str(self.encoder_resolution) + " ticks per rev")
+        self.node.get_logger().info("Publishing odometry data at: " + str(self.rate) + " Hz using " + str(self.base_frame) + " as base frame")
 
         if self.PubEncoders == True:
-            self.lEncoderPub = self.create_publisher(UInt16, 'Lencoder', 5)
-            self.rEncoderPub = self.create_publisher(UInt16, 'Rencoder', 5)
-            self.lVelPub=self.create_publisher(Int16, 'Lvel', 5)
-            self.rVelPub=self.create_publisher(Int16, 'Rvel', 5)
+            self.lEncoderPub = self.node.create_publisher(UInt16, 'Lencoder', 5)
+            self.rEncoderPub = self.node.create_publisher(UInt16, 'Rencoder', 5)
+            self.lVelPub=self.node.create_publisher(Int16, 'Lvel', 5)
+            self.rVelPub=self.node.create_publisher(Int16, 'Rvel', 5)
         
         
         
         if self.voltage_pub == True:
-            self.voltagePub = self.create_publisher(Int32, 'voltage_value', 5)
-            self.voltage_percentage_pub = self.create_publisher(Int32, 'voltage_percentage', 5)
-            self.voltage_str_pub = self.create_publisher(String, 'voltage_str', 5)
+            self.voltagePub = self.node.create_publisher(Int32, 'voltage_value', 5)
+            self.voltage_percentage_pub = self.node.create_publisher(Int32, 'voltage_percentage', 5)
+            self.voltage_str_pub = self.node.create_publisher(String, 'voltage_str', 5)
 
         if self.show_statics == True:
-            self.emergencybt_pub = self.create_publisher(Int16, 'emergencybt_status', 5)
-            self.recharge_ir_pub = self.create_publisher(Int16, 'recharge_ir_status', 5)
-            self.create_subscription(Int16,'recharge_handle',self.handleRechargeCallback)
-            self.recharge_pub = self.create_publisher(Int16,'recharge_status',5)
-            self.create_subscription(Int16,'ware_version_req',self.reqVersionCallback)
-            self.version_pub = self.create_publisher(String,'ware_version',5)
-            self.pid_p_pub = self.create_publisher(String,'pid_p',5)
-            self.pid_i_pub = self.create_publisher(String,'pid_i',5)
-            self.pid_d_pub = self.create_publisher(String,'pid_d',5)
-            self.create_subscription(String,'pid_req', self.reqPidCallback)
-            self.create_subscription( String, 'pid_set', self.reqSetPidCallback)
-            self.recharge_way_pub = self.create_publisher(Int32,'recharge_way',5)
-            self.lwheel_ele_pub = self.create_publisher(Int32,'lwheel_ele', 5)
-            self.rwheel_ele_pub = self.create_publisher(Int32,'rwheel_ele', 5)
-            self.ir0_pub = self.create_publisher(Int32,'ir0',5)
-            self.ir1_pub = self.create_publisher(Int32,'ir1',5)
-            self.ir2_pub = self.create_publisher(Int32,'ir2',5)
-            self.ir3_pub = self.create_publisher(Int32,'ir3',5)
-            self.ir4_pub = self.create_publisher(Int32,'ir4',5)
-            self.ir5_pub = self.create_publisher(Int32,'ir5',5)
+            self.emergencybt_pub = self.node.create_publisher(Int16, 'emergencybt_status', 5)
+            self.recharge_ir_pub = self.node.create_publisher(Int16, 'recharge_ir_status', 5)
+            self.node.create_subscription(Int16,'recharge_handle',self.handleRechargeCallback)
+            self.recharge_pub = self.node.create_publisher(Int16,'recharge_status',5)
+            self.node.create_subscription(Int16,'ware_version_req',self.reqVersionCallback)
+            self.version_pub = self.node.create_publisher(String,'ware_version',5)
+            self.pid_p_pub = self.node.create_publisher(String,'pid_p',5)
+            self.pid_i_pub = self.node.create_publisher(String,'pid_i',5)
+            self.pid_d_pub = self.node.create_publisher(String,'pid_d',5)
+            self.node.create_subscription(String,'pid_req', self.reqPidCallback)
+            self.node.create_subscription( String, 'pid_set', self.reqSetPidCallback)
+            self.recharge_way_pub = self.node.create_publisher(Int32,'recharge_way',5)
+            self.lwheel_ele_pub = self.node.create_publisher(Int32,'lwheel_ele', 5)
+            self.rwheel_ele_pub = self.node.create_publisher(Int32,'rwheel_ele', 5)
+            self.ir0_pub = self.node.create_publisher(Int32,'ir0',5)
+            self.ir1_pub = self.node.create_publisher(Int32,'ir1',5)
+            self.ir2_pub = self.node.create_publisher(Int32,'ir2',5)
+            self.ir3_pub = self.node.create_publisher(Int32,'ir3',5)
+            self.ir4_pub = self.node.create_publisher(Int32,'ir4',5)
+            self.ir5_pub = self.node.create_publisher(Int32,'ir5',5)
 
 
-        self.create_subscription(Int16,'imu_reset',self.resetImuCallback)
-        self.create_subscription(Int16,'encoder_reset',self.resetEncoderCallback)
-        self.create_subscription(Int16,'system_reset',self.resetSystemCallback)
+        self.node.create_subscription(Int16,'imu_reset',self.resetImuCallback)
+        self.node.create_subscription(Int16,'encoder_reset',self.resetEncoderCallback)
+        self.node.create_subscription(Int16,'system_reset',self.resetSystemCallback)
 
 
         self.stm32_version=0
         _,stm32_hardware1,stm32_hardware0,stm32_software1,stm32_software0=self.Stm32.get_hardware_version()
-        self.get_logger().info("*************************************************")
-        self.get_logger().info("stm32 hardware_version is "+str(stm32_hardware0)+str(".")+str(stm32_hardware1))
-        self.get_logger().info("stm32 software_version is "+str(stm32_software0)+str(".")+str(stm32_software1))
-        self.get_logger().info("*************************************************")
+        self.node.get_logger().info("*************************************************")
+        self.node.get_logger().info("stm32 hardware_version is "+str(stm32_hardware0)+str(".")+str(stm32_hardware1))
+        self.node.get_logger().info("stm32 software_version is "+str(stm32_software0)+str(".")+str(stm32_software1))
+        self.node.get_logger().info("*************************************************")
 
 
 
@@ -442,18 +443,18 @@ class BaseController:
             try:
                 res = self.Stm32.reset_system()
                 if res==self.FAIL:
-                    self.get_logger().error("reset system failed ")
+                    self.node.get_logger().error("reset system failed ")
             except:
-                    self.get_logger().error("request to reset system exception ")
+                    self.node.get_logger().error("request to reset system exception ")
 
     def resetEncoderCallback(self, req):
         if req.data==1:
             try:
                 res = self.Stm32.reset_encoders()
                 if res==self.FAIL:
-                    self.get_logger().error("reset encoder failed ")
+                    self.node.get_logger().error("reset encoder failed ")
             except:
-                self.get_logger().error("request to reset encoder exception ")
+                self.node.get_logger().error("request to reset encoder exception ")
 
     def reqSetPidCallback(self, req):
         if req.data!='':
@@ -462,23 +463,23 @@ class BaseController:
                 try:
                     res=self.Stm32.set_pid(0x06, float(set_list[1]), float(set_list[2]))
                     if res==self.FAIL:
-                        self.get_logger().error("set the P of PID failed ")
+                        self.node.get_logger().error("set the P of PID failed ")
                 except:
-                    self.get_logger().error("set the P of PID exception ")
+                    self.node.get_logger().error("set the P of PID exception ")
             if set_list[0]=='I':
                 try:
                     res=self.Stm32.set_pid(0x08, float(set_list[1]), float(set_list[2]))
                     if res==self.FAIL:
-                        self.get_logger().error("set the I of PID failed ")
+                        self.node.get_logger().error("set the I of PID failed ")
                 except:
-                    self.get_logger().error("set the I of PID exception ")
+                    self.node.get_logger().error("set the I of PID exception ")
             if set_list[0]=='D':
                 try:
                     res=self.Stm32.set_pid(0x0A, float(set_list[1]), float(set_list[2]))
                     if res==self.FAIL:
-                        self.get_logger().error("set the D of PID failed ")
+                        self.node.get_logger().error("set the D of PID failed ")
                 except:
-                    self.get_logger().error("set the D of PID exception ")
+                    self.node.get_logger().error("set the D of PID exception ")
 
     def reqPidCallback(self, req):
         if req.data=='P':
@@ -486,28 +487,28 @@ class BaseController:
                 res,pl,pr = self.Stm32.get_pid(0x07)
                 self.pid_p_pub.publish(str(pl) + "," + str(pr))
                 if res==self.FAIL:
-                    self.get_logger().error("request the P of PID failed ")
+                    self.node.get_logger().error("request the P of PID failed ")
             except:
                     self.pid_p_pub.publish("")
-                    self.get_logger().error("request the P of PID exception ")
+                    self.node.get_logger().error("request the P of PID exception ")
         if req.data=='I':
             try:
                 res,il,ir = self.Stm32.get_pid(0x09)
                 self.pid_i_pub.publish(str(il) + "," + str(ir))
                 if res==self.FAIL:
-                    self.get_logger().error("request the I of PID failed ")
+                    self.node.get_logger().error("request the I of PID failed ")
             except:
                     self.pid_i_pub.publish("")
-                    self.get_logger().error("request the I of PID exception ")
+                    self.node.get_logger().error("request the I of PID exception ")
         if req.data=='D':
             try:
                 res,dl,dr = self.Stm32.get_pid(0x0B)
                 self.pid_d_pub.publish(str(dl) + "," + str(dr))
                 if res==self.FAIL:
-                    self.get_logger().error("request the D of PID failed ")
+                    self.node.get_logger().error("request the D of PID failed ")
             except:
                 self.pid_d_pub.publish("")
-                self.get_logger().error("request the D of PID exception ")
+                self.node.get_logger().error("request the D of PID exception ")
 
     def reqVersionCallback(self, req):
         if req.data==1:
@@ -515,28 +516,28 @@ class BaseController:
                 res,ver0,ver1,ver2,ver3 = self.Stm32.get_hardware_version()
                 self.version_pub.publish(str(ver0)+"."+str(ver1)+"-"+str(ver2)+"."+str(ver3))
                 if res==self.FAIL:
-                    self.get_logger().error("request the version of hardware failed ")
+                    self.node.get_logger().error("request the version of hardware failed ")
             except:
                 self.version_pub.publish("")
-                self.get_logger().error("request the version of hardware exception ")
+                self.node.get_logger().error("request the version of hardware exception ")
         if req.data==2:
             try:
                 res,ver0,ver1,ver2,ver3 = self.Stm32.get_firmware_version()
                 self.version_pub.publish(str(ver0)+"."+str(ver1)+"-"+str(ver2)+"."+str(ver3))
                 if res==self.FAIL:
-                    self.get_logger().error("request the version of firmware failed ")
+                    self.node.get_logger().error("request the version of firmware failed ")
             except:
                 self.version_pub.publish("")
-                self.get_logger().error("request the version of firmware exception ")
+                self.node.get_logger().error("request the version of firmware exception ")
 
     def resetImuCallback(self, req):
         if req.data==1:
             try:
                 res = self.Stm32.reset_imu()
                 if res==self.FAIL:
-                    self.get_logger().error("reset imu failed ")
+                    self.node.get_logger().error("reset imu failed ")
             except:
-                self.get_logger().error("request to reset imu exception ")
+                self.node.get_logger().error("request to reset imu exception ")
 
     def handleRechargeCallback(self, req):
         if req.data==1:
@@ -544,13 +545,13 @@ class BaseController:
                 res = self.Stm32.start_automatic_recharge()
                 self.is_recharge = True
             except:
-                self.get_logger().error("start automatic recharge exception ")
+                self.node.get_logger().error("start automatic recharge exception ")
         else:
             try:
                 res = self.Stm32.stop_automatic_recharge()
                 self.is_recharge = False
             except:
-                self.get_logger().error("stop automatic recharge exception ")
+                self.node.get_logger().error("stop automatic recharge exception ")
             
     # Probably not needed 
     def isPassedCallback(self, msg):
@@ -562,7 +563,7 @@ class BaseController:
     #Only for smoother
     def cmdVelCallback(self, req):
         # Handle velocity-based movement requests
-        self.last_cmd_vel = self.get_clock().now()
+        self.last_cmd_vel = self.node.get_clock().now()
         
         robot_cmd_vel = Twist()
         x = req.linear.x         # m/s
@@ -587,12 +588,12 @@ class BaseController:
             #sonar0
             if((self.sonar_r0<=self.safe_range_0 and self.sonar_r0>=2) and (x<0)):
                 x= 0.0
-                self.get_logger().warn("sonar0 smaller than safe_range_0, cannot back")
+                self.node.get_logger().warn("sonar0 smaller than safe_range_0, cannot back")
             #sonar1
             if((self.sonar_r1<=self.safe_range_0 and self.sonar_r1>=2) and (x>0)):
                 x=0.0
                 th=0.2
-                self.get_logger().warn("sonar1 smaller than safe_range_0, only trun left")
+                self.node.get_logger().warn("sonar1 smaller than safe_range_0, only trun left")
             
             if((self.sonar_r1<=self.safe_range_0 and self.sonar_r1>=2) and (th<0)):
                 x=0.0
@@ -601,13 +602,13 @@ class BaseController:
             if((self.sonar_r2<=self.safe_range_0 and self.sonar_r2>=2) and (x>0)):
                 x=0.0
                 th=0.2
-                self.get_logger().warn("sonar2 smaller than safe_range_0, only trun left")
+                self.node.get_logger().warn("sonar2 smaller than safe_range_0, only trun left")
 
             #sonar3
             if((self.sonar_r3<=self.safe_range_0 and self.sonar_r3>=2) and (x>0)):
                 x=0.0
                 th=-0.2
-                self.get_logger().warn("sonar3 smaller than safe_range_0, only trun left")
+                self.node.get_logger().warn("sonar3 smaller than safe_range_0, only trun left")
 
             if((self.sonar_r3<=self.safe_range_0 and self.sonar_r3>=2) and (th>0)):
                 x=0.0
@@ -615,7 +616,7 @@ class BaseController:
             #sonar4
             if((self.sonar_r4<=self.safe_range_0 and self.sonar_r0>=2) and (x<0)):
                 x= 0.0
-                self.get_logger().warn("sonar4 smaller than safe_range_0, cannot back")
+                self.node.get_logger().warn("sonar4 smaller than safe_range_0, cannot back")
 
 
 
@@ -695,7 +696,7 @@ class BaseController:
              return 0
 
     def poll(self):
-        now = self.get_clock().now()
+        now = self.node.get_clock().now()
         if now >= self.t_next:
             try:
                 stat_, left_enc,right_enc = self.Stm32.get_encoder_counts() 
@@ -704,7 +705,7 @@ class BaseController:
                     self.rEncoderPub.publish(right_enc)
             except:
                 self.bad_encoder_count += 1
-                self.get_logger().error("Encoder exception count: " + str(self.bad_encoder_count))
+                self.node.get_logger().error("Encoder exception count: " + str(self.bad_encoder_count))
                 return
             try:
                 res,vol1,vol2,vol3,vol4,vol5,vol6 = self.Stm32.get_voltage()
@@ -728,7 +729,7 @@ class BaseController:
                     self.lwheel_ele_pub.publish(-1)
                     self.rwheel_ele_pub.publish(-1)
 
-                self.get_logger().error("get voltage exception")
+                self.node.get_logger().error("get voltage exception")
             try:
                 res,ir1,ir2,ir3,ir4,ir5,ir6 = self.Stm32.get_infrareds()
                 if self.show_statics == True:
@@ -746,7 +747,7 @@ class BaseController:
                     self.ir3_pub.publish(-1)
                     self.ir4_pub.publish(-1)
                     self.ir5_pub.publish(-1)
-                self.get_logger().error("get infrared ray exception")
+                self.node.get_logger().error("get infrared ray exception")
             try:
                 res,way = self.Stm32.get_recharge_way()
                 self.recharge_way = way
@@ -755,7 +756,7 @@ class BaseController:
             except:
                 if self.show_statics == True:
                     self.recharge_way_pub.publish(-1)
-                self.get_logger().error("get recharge way exception")
+                self.node.get_logger().error("get recharge way exception")
             try:
                 res,status = self.Stm32.get_automatic_recharge_status()
                 self.recharge_status = status
@@ -766,7 +767,7 @@ class BaseController:
             except:
                 if self.show_statics == True:
                     self.recharge_pub.publish(-1)
-                self.get_logger().error("get recharge status exception")
+                self.node.get_logger().error("get recharge status exception")
             if(not self.is_recharge):
                 try:
                     res,eme_val,rech_val  = self.Stm32.get_embtn_recharge()
@@ -779,7 +780,7 @@ class BaseController:
                         self.emergencybt_val = -1
                         self.emergencybt_pub.publish(-1)
                         self.recharge_ir_pub.publish(-1)
-                    self.get_logger().error("get emergency button exception")
+                    self.node.get_logger().error("get emergency button exception")
             if (self.useSonar == True) :
                 pcloud = PointCloud2()
                 try:
@@ -894,7 +895,7 @@ class BaseController:
                     pcloud = PointCloud2.create_cloud_xyz32(pcloud.header, self.sonar_cloud)
                     self.sonar_pub_cloud.publish(pcloud)
                 except:
-                    self.get_logger().error("Get Sonar exception")
+                    self.node.get_logger().error("Get Sonar exception")
                     return
             if (self.useImu == True):
                 try:
@@ -906,7 +907,7 @@ class BaseController:
                         yaw_vel = yaw_vel-65535
                     yaw_vel = yaw_vel/100.0
                     imu_data = Imu()  
-                    imu_data.header.stamp = self.get_clock().now()
+                    imu_data.header.stamp = self.node.get_clock().now()
                     imu_data.header.frame_id = self.imu_frame_id 
                     imu_data.orientation_covariance[0] = 1000000
                     imu_data.orientation_covariance[1] = 0
@@ -933,7 +934,7 @@ class BaseController:
                     self.imuAnglePub.publish(-1*self.imu_offset*yaw*3.1416/(180 *2.0))
                 except:
                     self.bad_encoder_count += 1
-                    self.get_logger().error("IMU exception count: " + str(self.bad_encoder_count))
+                    self.node.get_logger().error("IMU exception count: " + str(self.bad_encoder_count))
                     return
                 
             dt = now - self.then
@@ -983,7 +984,7 @@ class BaseController:
             quaternion.w = cos(self.th / 2.0)
 
             t = TransformStamped()
-            t.header.stamp = self.get_clock().now().to_msg()
+            t.header.stamp = self.node.get_clock().now().to_msg()
             t.header.frame_id = self.base_frame
             t.child_frame_id = "odom"
             t.transform.translation.x = self.x
