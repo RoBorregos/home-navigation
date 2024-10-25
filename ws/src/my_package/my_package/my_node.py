@@ -1126,8 +1126,8 @@ class BaseController:
             t.header.stamp = self.node.get_clock().now().to_msg()
             t.header.frame_id = self.base_frame
             t.child_frame_id = "odom"
-            t.transform.translation.x = self.x
-            t.transform.translation.y = self.y
+            t.transform.translation.x = float(self.x)
+            t.transform.translation.y = float(self.y)
             t.transform.translation.z = 0.0
             t.transform.rotation.x = quaternion.x
             t.transform.rotation.y = quaternion.y
