@@ -14,13 +14,13 @@ class Stm32ROS(Node):
 
         self.get_logger().info('Hello %s!' % my_param)
 
-        my_new_param = rclpy.parameter.Parameter(
-            'my_parameter',
-            rclpy.Parameter.Type.STRING,
-            'world'
-        )
-        all_new_parameters = [my_new_param]
-        self.set_parameters(all_new_parameters)
+        # my_new_param = rclpy.parameter.Parameter(
+        #     'my_parameter',
+        #     rclpy.Parameter.Type.STRING,
+        #     'world'
+        # )
+        # all_new_parameters = [my_new_param]
+        # self.set_parameters(all_new_parameters) # set new parameters
 
 
 
