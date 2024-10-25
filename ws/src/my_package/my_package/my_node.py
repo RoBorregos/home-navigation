@@ -393,9 +393,10 @@ class BaseController:
         sonar1_offset_yaw,sonar1_offset_x,sonar1_offset_y, sonar2_offset_yaw,sonar2_offset_x,
         sonar2_offset_y,sonar3_offset_yaw,sonar3_offset_x,sonar3_offset_y,sonar4_offset_yaw,
         sonar4_offset_x,sonar4_offset_y,imu_frame_id,imu_offset,PubEncoders,voltage_pub,
-        show_statics
+        show_statics,base_controller_timeout
         ):
         self.node = node
+        self.timeout = base_controller_timeout
         self.voltage_pub = voltage_pub
         self.show_statics = show_statics
         self.useImu = useImu
@@ -1194,6 +1195,7 @@ class Stm32ROS(Node):
         self.declare_parameter("stm32_timeout", 3)
         ##Base controller parameters
         self.declare_parameter("base_controller_rate", 10) #self.rate = float(rospy.get_param("~base_controller_rate", 10))
+        self.declare_parameter("base_controller_timeout", 1.0)
         self.declare_parameter("useImu", False)
         self.declare_parameter("useSonar", False)
         self.declare_parameter("wheel_diameter", 0.1518)
@@ -1291,6 +1293,7 @@ class Stm32ROS(Node):
             self.imu_frame_id = self.get_parameter('imu_frame_id').get_parameter_value().string_value
             self.imu_offset = self.get_parameter('imu_offset').get_parameter_value().double_value
             self.base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
+            self.base_controller_timeout = self.get_parameter('base_controller_timeout').get_parameter_value().double_value
             
             self.myBaseController = BaseController(
                 self,self.base_controller_rate,self.controller,self.base_frame,self.wheel_diameter,
@@ -1301,7 +1304,7 @@ class Stm32ROS(Node):
                 self.sonar1_offset_x,self.sonar1_offset_y,self.sonar2_offset_yaw,self.sonar2_offset_x,
                 self.sonar2_offset_y,self.sonar3_offset_yaw,self.sonar3_offset_x,self.sonar3_offset_y,
                 self.sonar4_offset_yaw,self.sonar4_offset_x,self.sonar4_offset_y,self.imu_frame_id,
-                self.imu_offset,self.PubEncoders,self.voltage_pub,self.show_statics
+                self.imu_offset,self.PubEncoders,self.voltage_pub,self.show_statics,self.base_controller_timeout
                  )
         
 
