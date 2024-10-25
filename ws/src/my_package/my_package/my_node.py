@@ -405,7 +405,7 @@ class BaseController:
         self.encoder_max=encoder_max
         self.imu_offset = imu_offset
         self.PubEncoders = PubEncoders
-        self.stm32 = Stm32
+        self.Stm32 = Stm32
         self.rate = rate
         self.useSonar = useSonar
         self.use_smotheer = use_smotheer
