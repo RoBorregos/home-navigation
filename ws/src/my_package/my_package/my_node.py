@@ -1289,9 +1289,10 @@ class Stm32ROS(Node):
             self.sonar4_offset_y = self.get_parameter('sonar4_offset_y').get_parameter_value().double_value
             self.imu_frame_id = self.get_parameter('imu_frame_id').get_parameter_value().string_value
             self.imu_offset = self.get_parameter('imu_offset').get_parameter_value().double_value
+            self.base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
             
             self.myBaseController = BaseController(
-                self,self.base_controller_rate,self.controller,self.base_controller,self.wheel_diameter,
+                self,self.base_controller_rate,self.controller,self.base_frame,self.wheel_diameter,
                 self.wheel_track,self.encoder_resolution,self.gear_reduction,self.accel_limit,
                 self.motors_reversed,self.start_rotation_limit_w,self.use_smotheer,self.useImu,
                 self.useSonar,self.encoder_min, self.encoder_max, self.sonar_height,
