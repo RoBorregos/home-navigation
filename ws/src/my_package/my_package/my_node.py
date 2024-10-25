@@ -382,7 +382,6 @@ class Stm32:
             self.node.get_logger().error("Exception executing command: " + str(binascii.b2a_hex(cmd)))
             return 0
         
-        self.mutex.release()
         return 1
 
 class BaseController:
