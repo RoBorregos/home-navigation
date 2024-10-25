@@ -1258,7 +1258,7 @@ class Stm32ROS(Node):
             self.base_controller_rate = self.get_parameter('base_controller_rate').get_parameter_value().integer_value
             self.useImu = self.get_parameter('useImu').get_parameter_value().bool_value
             self.useSonar = self.get_parameter('useSonar').get_parameter_value().bool_value
-            self.wheel_diameter = self.get_parameter('wheel_diameter').get_parame
+            self.wheel_diameter = self.get_parameter('wheel_diameter').get_parameter_value().double_value
             self.wheel_track = self.get_parameter('wheel_track').get_parameter_value().double_value
             self.encoder_resolution = self.get_parameter('encoder_resolution').get_parameter_value().integer_value
             self.gear_reduction = self.get_parameter('gear_reduction').get_parameter_value().double_value
