@@ -14,6 +14,7 @@ from std_msgs.msg import Int16, Int32, UInt16, Float32, String
 from sensor_msgs.msg import Range, Imu, PointCloud2
 from nav_msgs.msg import Odometry
 import tf2_ros 
+import time as t
 
 ODOM_POSE_COVARIANCE = [1e-3, 0, 0, 0, 0, 0, 
                         0, 1e-3, 0, 0, 0, 0,
@@ -74,10 +75,10 @@ class Stm32:
             self.port = Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout, writeTimeout=self.writeTimeout)
             # The next line is necessary to give the firmware time to wake up.
             counter = 0
-            self.node.create_timer(1)
+            t.sleep(1)
             state_, val = self.get_baud()
             while val!=self.baudrate:
-                self.node.create_timer(1)
+                t.sleep(1)
                 state_, val  = self.get_baud()   
                 counter+=1
                 if counter >= self.stm32_timeout:
