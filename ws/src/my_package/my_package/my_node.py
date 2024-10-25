@@ -1140,9 +1140,9 @@ class BaseController:
             odom.header.frame_id = "odom"
             odom.child_frame_id = self.base_frame
             odom.header.stamp = self.node.get_clock().now().to_msg()
-            odom.pose.pose.position.x = self.x
-            odom.pose.pose.position.y = self.y
-            odom.pose.pose.position.z = 0
+            odom.pose.pose.position.x = float(self.x)
+            odom.pose.pose.position.y = float(self.y)
+            odom.pose.pose.position.z = 0.0
             odom.pose.pose.orientation = quaternion
             odom.twist.twist.linear.x = vxy
             odom.twist.twist.linear.y = 0
