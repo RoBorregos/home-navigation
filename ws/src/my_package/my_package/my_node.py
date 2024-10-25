@@ -441,7 +441,7 @@ class BaseController:
         self.SUCCESS = 0
         self.FAIL = -1
 
-        now = self.node.get_clock().now().seconds
+        now = self.node.get_clock().now()
         self.then = now
         self.t_delta = Duration(seconds=1.0 / self.rate)
         self.t_next = now + self.t_delta
