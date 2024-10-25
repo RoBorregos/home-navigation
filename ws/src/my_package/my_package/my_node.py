@@ -326,15 +326,15 @@ class Stm32:
         else:
            return self.FAIL, 0, 0, 0, 0, 0
     def drive(self, left, right):
-        data1 = struct.pack("h", left)
+        data1 = struct.pack("h", int(left))
         d1, d2 = struct.unpack("BB", data1)
 
-        data2 = struct.pack("h", right)
+        data2 = struct.pack("h", int(right))
         c1, c2 = struct.unpack("BB", data2)
 
         self.check_list = [0x05,0x04, d1, d2, c1, c2]
         self.check_num = self.get_check_sum(self.check_list)
-        cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x05, 0x04) + struct.pack("hh", left, right) + struct.pack("B", self.check_num)
+        cmd_str=struct.pack("4B", self.HEADER0, self.HEADER1, 0x05, 0x04) + struct.pack("hh", int(left), int(right)) + struct.pack("B", self.check_num)
         if (self.execute(cmd_str))==1 and self.payload_ack == b'\x00':
            return  self.SUCCESS
         else:
@@ -1049,16 +1049,16 @@ class BaseController:
                         yaw_vel = yaw_vel-65535
                     yaw_vel = yaw_vel/100.0
                     imu_data = Imu()  
-                    imu_data.header.stamp = self.node.get_clock().now()
+                    imu_data.header.stamp = self.node.get_clock().now().to_msg()
                     imu_data.header.frame_id = self.imu_frame_id 
-                    imu_data.orientation_covariance[0] = 1000000
-                    imu_data.orientation_covariance[1] = 0
-                    imu_data.orientation_covariance[2] = 0
-                    imu_data.orientation_covariance[3] = 0
-                    imu_data.orientation_covariance[4] = 1000000
-                    imu_data.orientation_covariance[5] = 0
-                    imu_data.orientation_covariance[6] = 0
-                    imu_data.orientation_covariance[7] = 0
+                    imu_data.orientation_covariance[0] = 1000000.0
+                    imu_data.orientation_covariance[1] = 0.0
+                    imu_data.orientation_covariance[2] = 0.0
+                    imu_data.orientation_covariance[3] = 0.0
+                    imu_data.orientation_covariance[4] = 1000000.0
+                    imu_data.orientation_covariance[5] = 0.0
+                    imu_data.orientation_covariance[6] = 0.0
+                    imu_data.orientation_covariance[7] = 0.0
                     imu_data.orientation_covariance[8] = 0.000001
                     imu_quaternion = Quaternion()
                     imu_quaternion.x = 0.0 
@@ -1073,10 +1073,13 @@ class BaseController:
                     imu_data.angular_velocity.y = 0.0
                     imu_data.angular_velocity.z = (yaw_vel*3.1416/(180*100))
                     self.imuPub.publish(imu_data)
-                    self.imuAnglePub.publish(-1*self.imu_offset*yaw*3.1416/(180 *2.0))
-                except:
+                    messageFl32 = Float32()
+                    messageFl32.data = -1*self.imu_offset*yaw*3.1416/(180 *2.0)
+                    self.imuAnglePub.publish(messageFl32)
+                except Exception as e:
                     self.bad_encoder_count += 1
                     self.node.get_logger().error("IMU exception count: " + str(self.bad_encoder_count))
+                    self.node.get_logger().error(str(e))
                     return
                 
             dt = now - self.then

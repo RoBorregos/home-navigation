@@ -7,10 +7,10 @@ DashgoDriver:
     sensorstate_rate: 10
 
     # To use the smoother nodelet set use_smoother to True
-    use_smotheer: False
+    use_smotheer: True
 
     useSonar: False
-    useImu: False
+    useImu: True
     use_base_controller: True
     base_controller_rate: 10
 
