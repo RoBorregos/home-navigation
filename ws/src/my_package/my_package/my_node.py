@@ -712,12 +712,12 @@ class BaseController:
         th = req.angular.z       # rad/s
 
         if self.emergencybt_val==1:
-            robot_cmd_vel.linear.x = 0
-            robot_cmd_vel.linear.y = 0
-            robot_cmd_vel.angular.z = 0
+            robot_cmd_vel.linear.x = 0.0
+            robot_cmd_vel.linear.y = 0.0
+            robot_cmd_vel.angular.z = 0.0
         else:
             robot_cmd_vel.linear.x = x
-            robot_cmd_vel.linear.y = 0
+            robot_cmd_vel.linear.y = 0.0
             robot_cmd_vel.angular.z = th
         
         if (self.use_smotheer == True):
