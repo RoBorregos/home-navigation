@@ -31,8 +31,8 @@ ODOM_TWIST_COVARIANCE = [1e-3, 0, 0, 0, 0, 0,
 
 class Stm32:
     def __init__(self,node, port, baudrate, timeout,stm32_timeout):
-        N_ANALOG_PORTS = 6
-        N_DIGITAL_PORTS = 12
+        self.N_ANALOG_PORTS = 6
+        self.N_DIGITAL_PORTS = 12
         # Initialize the values
         self.port = port
         self.stm32_timeout = stm32_timeout
