@@ -476,11 +476,11 @@ class BaseController:
 
         if (self.use_smotheer == True):
             self.robot_cmd_vel_pub = self.node.create_publisher(Twist, 'robot_cmd_vel', 5)
-            self.node.create_subscription(Int16,'is_passed',self.isPassedCallback) # Probably not needed
+            self.node.create_subscription(Int16,'is_passed',self.isPassedCallback,10) # Probably not needed
             self.isPassed = True
-            self.node.create_subscription(Twist,'smoother_cmd_vel',self.cmdVelCallback)
+            self.node.create_subscription(Twist,'smoother_cmd_vel',self.cmdVelCallback,10)
         else:
-            self.node.create_subscription(Twist,'cmd_vel',self.cmdVelCallback)
+            self.node.create_subscription(Twist,'cmd_vel',self.cmdVelCallback,10)
 
         #RESET VALUES OF STM32
         self.Stm32.reset_encoders()
@@ -542,15 +542,15 @@ class BaseController:
         if self.show_statics == True:
             self.emergencybt_pub = self.node.create_publisher(Int16, 'emergencybt_status', 5)
             self.recharge_ir_pub = self.node.create_publisher(Int16, 'recharge_ir_status', 5)
-            self.node.create_subscription(Int16,'recharge_handle',self.handleRechargeCallback)
+            self.node.create_subscription(Int16,'recharge_handle',self.handleRechargeCallback,10)
             self.recharge_pub = self.node.create_publisher(Int16,'recharge_status',5)
-            self.node.create_subscription(Int16,'ware_version_req',self.reqVersionCallback)
+            self.node.create_subscription(Int16,'ware_version_req',self.reqVersionCallback,10)
             self.version_pub = self.node.create_publisher(String,'ware_version',5)
             self.pid_p_pub = self.node.create_publisher(String,'pid_p',5)
             self.pid_i_pub = self.node.create_publisher(String,'pid_i',5)
             self.pid_d_pub = self.node.create_publisher(String,'pid_d',5)
-            self.node.create_subscription(String,'pid_req', self.reqPidCallback)
-            self.node.create_subscription( String, 'pid_set', self.reqSetPidCallback)
+            self.node.create_subscription(String,'pid_req', self.reqPidCallback,10)
+            self.node.create_subscription( String, 'pid_set', self.reqSetPidCallback,10)
             self.recharge_way_pub = self.node.create_publisher(Int32,'recharge_way',5)
             self.lwheel_ele_pub = self.node.create_publisher(Int32,'lwheel_ele', 5)
             self.rwheel_ele_pub = self.node.create_publisher(Int32,'rwheel_ele', 5)
@@ -562,9 +562,9 @@ class BaseController:
             self.ir5_pub = self.node.create_publisher(Int32,'ir5',5)
 
 
-        self.node.create_subscription(Int16,'imu_reset',self.resetImuCallback)
-        self.node.create_subscription(Int16,'encoder_reset',self.resetEncoderCallback)
-        self.node.create_subscription(Int16,'system_reset',self.resetSystemCallback)
+        self.node.create_subscription(Int16,'imu_reset',self.resetImuCallback,10)
+        self.node.create_subscription(Int16,'encoder_reset',self.resetEncoderCallback,10)
+        self.node.create_subscription(Int16,'system_reset',self.resetSystemCallback,10)
 
 
         self.stm32_version=0
