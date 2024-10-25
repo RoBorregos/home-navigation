@@ -17,18 +17,18 @@ from nav_msgs.msg import Odometry
 import tf2_ros 
 import time as t
 
-ODOM_POSE_COVARIANCE = [1e-3, 0, 0, 0, 0, 0, 
-                        0, 1e-3, 0, 0, 0, 0,
-                        0, 0, 1e6, 0, 0, 0,
-                        0, 0, 0, 1e6, 0, 0,
-                        0, 0, 0, 0, 1e6, 0,
-                        0, 0, 0, 0, 0, 1e3]
-ODOM_TWIST_COVARIANCE = [1e-3, 0, 0, 0, 0, 0, 
-                         0, 1e-3, 0, 0, 0, 0,
-                         0, 0, 1e6, 0, 0, 0,
-                         0, 0, 0, 1e6, 0, 0,
-                         0, 0, 0, 0, 1e6, 0,
-                         0, 0, 0, 0, 0, 1e3]
+ODOM_POSE_COVARIANCE = [float(1e-3), 0.0, 0.0, 0.0, 0.0, 0.0, 
+                        0.0, float(1e-3), 0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, float(1e6), 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, float(1e6), 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0, float(1e6), 0.0,
+                        0.0, 0.0, 0.0, 0.0, 0.0, float(1e3)]
+ODOM_TWIST_COVARIANCE = [float(1e-3), 0.0, 0.0, 0.0, 0.0, 0.0, 
+                         0.0, float(1e-3), 0.0, 0.0, 0.0, 0.0,
+                         0.0, 0.0, float(1e6), 0.0, 0.0, 0.0,
+                         0.0, 0.0, 0.0, float(1e6), 0.0, 0.0,
+                         0.0, 0.0, 0.0, 0.0, float(1e6), 0.0,
+                         0.0, 0.0, 0.0, 0.0, 0.0, float(1e3)]
 N_ANALOG_PORTS = 6
 N_DIGITAL_PORTS = 12
 
