@@ -441,7 +441,7 @@ class BaseController:
         self.SUCCESS = 0
         self.FAIL = -1
 
-        now = self.node.get_clock().now()
+        now = self.node.get_clock().now().seconds
         self.then = now
         self.t_delta = Duration(seconds=1.0 / self.rate)
         self.t_next = now + self.t_delta
@@ -1078,7 +1078,7 @@ class BaseController:
                 
             dt = now - self.then
             self.then = now
-            dt = dt.to_sec()
+            dt = dt.seconds_nanoseconds()[0] + dt.seconds_nanoseconds()[1] * 1e-9
             if self.enc_left == None:
                 dright = 0
                 dleft = 0
