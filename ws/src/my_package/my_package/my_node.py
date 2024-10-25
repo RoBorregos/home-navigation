@@ -393,10 +393,12 @@ class BaseController:
         sonar1_offset_yaw,sonar1_offset_x,sonar1_offset_y, sonar2_offset_yaw,sonar2_offset_x,
         sonar2_offset_y,sonar3_offset_yaw,sonar3_offset_x,sonar3_offset_y,sonar4_offset_yaw,
         sonar4_offset_x,sonar4_offset_y,imu_frame_id,imu_offset,PubEncoders,voltage_pub,
-        show_statics,base_controller_timeout
+        show_statics,base_controller_timeout,encoder_high_wrap,encoder_low_wrap
         ):
         self.node = node
         self.timeout = base_controller_timeout
+        self.encoder_high_wrap = encoder_high_wrap
+        self.encoder_low_wrap = encoder_low_wrap
         self.voltage_pub = voltage_pub
         self.show_statics = show_statics
         self.useImu = useImu
@@ -1228,7 +1230,12 @@ class Stm32ROS(Node):
         self.declare_parameter("imu_offset",1.01)
         self.declare_parameter("pub_encoders",False)
         self.declare_parameter("voltage_pub",False)
-        self.declare_parameter("show_statics",False)    
+        self.declare_parameter("show_statics",False)  
+        self.encoder_min = self.get_parameter('encoder_min').get_parameter_value().integer_value
+        self.encoder_max = self.get_parameter('encoder_max').get_parameter_value().integer_value
+        self.declare_parameter('wheel_low_wrap', (self.encoder_max - self.encoder_min) * 0.3 + self.encoder_min )  
+        self.declare_parameter('wheel_high_wrap', (self.encoder_max - self.encoder_min) * 0.3 + self.encoder_min )  
+
         #Initial Setup
         
         #Rate reference
@@ -1294,6 +1301,8 @@ class Stm32ROS(Node):
             self.imu_offset = self.get_parameter('imu_offset').get_parameter_value().double_value
             self.base_frame = self.get_parameter('base_frame').get_parameter_value().string_value
             self.base_controller_timeout = self.get_parameter('base_controller_timeout').get_parameter_value().double_value
+            self.encoder_low_wrap = self.get_parameter('wheel_low_wrap').get_parameter_value().double_value
+            self.encoder_high_wrap = self.get_parameter('wheel_high_wrap').get_parameter_value().double_value
             
             self.myBaseController = BaseController(
                 self,self.base_controller_rate,self.controller,self.base_frame,self.wheel_diameter,
@@ -1304,7 +1313,8 @@ class Stm32ROS(Node):
                 self.sonar1_offset_x,self.sonar1_offset_y,self.sonar2_offset_yaw,self.sonar2_offset_x,
                 self.sonar2_offset_y,self.sonar3_offset_yaw,self.sonar3_offset_x,self.sonar3_offset_y,
                 self.sonar4_offset_yaw,self.sonar4_offset_x,self.sonar4_offset_y,self.imu_frame_id,
-                self.imu_offset,self.PubEncoders,self.voltage_pub,self.show_statics,self.base_controller_timeout
+                self.imu_offset,self.PubEncoders,self.voltage_pub,self.show_statics,self.base_controller_timeout,
+                self.encoder_high_wrap ,self.encoder_low_wrap
                  )
         
 
