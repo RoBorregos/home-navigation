@@ -477,11 +477,11 @@ class BaseController:
         self.emergencybt_val = 0
         self.is_recharge = False
         self.recharge_status = 0
+        self.isPassed = True
 
         if (self.use_smotheer == True):
             self.robot_cmd_vel_pub = self.node.create_publisher(Twist, 'robot_cmd_vel', 5)
             self.node.create_subscription(Int16,'is_passed',self.isPassedCallback,10) # Probably not needed
-            self.isPassed = True
             self.node.create_subscription(Twist,'smoother_cmd_vel',self.cmdVelCallback,10)
         else:
             self.node.create_subscription(Twist,'cmd_vel',self.cmdVelCallback,10)
