@@ -1139,7 +1139,7 @@ class BaseController:
             odom = Odometry()
             odom.header.frame_id = "odom"
             odom.child_frame_id = self.base_frame
-            odom.header.stamp = now
+            odom.header.stamp = self.node.get_clock().now().to_msg()
             odom.pose.pose.position.x = self.x
             odom.pose.pose.position.y = self.y
             odom.pose.pose.position.z = 0
