@@ -5,6 +5,7 @@ import os
 from math import pi as PI,sin, cos
 import struct
 import math
+import binascii
 
 import rclpy
 from rclpy.node import Node
@@ -88,11 +89,82 @@ class Stm32:
 
         except SerialException:
             self.node.get_logger().error("Serial Exception:")
-            self.node.get_logger().error(sys.exc_info())
+            self.node.get_logger().error(str(sys.exc_info()))
             self.node.get_logger().error("Traceback follows:")
             traceback.print_exc(file=sys.stdout)
             self.node.get_logger().error("Cannot connect to Stm32!")
             os._exit(1)
+    def receiveFiniteStates(self, rx_data):
+        if self.receive_state_ == self.WAITING_FF:
+            #print str(binascii.b2a_hex(rx_data))
+            if rx_data == b'\xff':
+                self.receive_state_ = self.WAITING_AA
+                self.receive_check_sum_ =0
+                self.receive_message_length_ = 0
+                self.byte_count_=0
+                self.payload_ack = b''
+                self.payload_args = b''
+                self.payload_len = 0
+
+
+        elif self.receive_state_ == self.WAITING_AA :
+             if rx_data == b'\xaa':
+                 self.receive_state_ = self.RECEIVE_LEN
+                 self.receive_check_sum_ = 0
+             else:
+                 self.receive_state_ = self.WAITING_FF
+
+        elif self.receive_state_ == self.RECEIVE_LEN:
+             self.receive_message_length_, = struct.unpack("B",rx_data)
+             self.receive_state_ = self.RECEIVE_PACKAGE
+             self.receive_check_sum_ = self.receive_message_length_
+        elif self.receive_state_ == self.RECEIVE_PACKAGE:
+             if self.byte_count_==0:
+                 self.payload_ack = rx_data
+             else:
+                 self.payload_args += rx_data
+             uc_tmp_, = struct.unpack("B",rx_data)
+             self.receive_check_sum_ = self.receive_check_sum_ + uc_tmp_
+             self.byte_count_ +=1
+             #print "byte:"+str(byte_count_) +","+ "rece_len:"+str(receive_message_length_)
+             if self.byte_count_ >= self.receive_message_length_:
+                 self.receive_state_ = self.RECEIVE_CHECK
+
+        elif self.receive_state_ == self.RECEIVE_CHECK:
+            #print "checksun:" + str(rx_data) + " " + str(self.receive_check_sum_%255)
+            #uc_tmp_, = struct.unpack("B",rx_data)
+            #print "checksum:" + str(uc_tmp_) +" " + str((self.receive_check_sum_)%255)
+            #if uc_tmp_ == (self.receive_check_sum_)%255:
+            if 1:
+                self.receive_state_ = self.WAITING_FF
+                #print str(binascii.b2a_hex(value))
+                #left, right, = struct.unpack('hh', value)
+                #print "left:"+str(left)+", right:"+str(right)
+                return 1 
+            else:
+                self.receive_state_ = self.WAITING_FF
+        else:
+            self.receive_state_ = self.WAITING_FF
+        return 0
+    
+    def recv(self, timeout=0.5):
+        timeout = min(timeout, self.timeout)
+        ''' This command should not be used on its own: it is called by the execute commands   
+            below in a thread safe manner.  Note: we use read() instead of readline() since
+            readline() tends to return garbage characters from the Stm32
+        '''
+        c = ''
+        value = ''
+        attempts = 0
+        c = self.port.read(1)
+        #print str(binascii.b2a_hex(c))
+        while self.receiveFiniteStates(c) != 1:
+            c = self.port.read(1)
+            #print str(binascii.b2a_hex(c))
+            attempts += 1
+            if attempts * self.interCharTimeout > timeout:
+                return 0
+        return 1
 
     def get_baud(self):
         ''' Get the current baud rate on the serial port.
@@ -285,6 +357,33 @@ class Stm32:
            return  self.SUCCESS
         else:
            return self.FAIL
+    def execute(self, cmd):
+        try:
+            self.port.flushInput()
+        except:
+            pass
+        
+        ntries = 1
+        attempts = 0
+        
+        try:
+            self.port.write(cmd)
+            res = self.recv(self.timeout)
+            while attempts < ntries and res !=1 :
+                try:
+                    self.port.flushInput()
+                    self.port.write(cmd)
+                    res = self.recv(self.timeout)
+                    #print "response : " + str(binascii.b2a_hex(res))
+                except:
+                    self.node.get_logger().error("Exception executing command: " + str(binascii.b2a_hex(cmd)))
+                attempts += 1
+        except:
+            self.node.get_logger().error("Exception executing command: " + str(binascii.b2a_hex(cmd)))
+            return 0
+        
+        self.mutex.release()
+        return 1
 
 class BaseController:
     def __init__(
