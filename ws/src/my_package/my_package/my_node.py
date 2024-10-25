@@ -521,7 +521,7 @@ class BaseController:
         self.imuAnglePub = self.node.create_publisher(Float32, 'imu_angle', 5)
         #Set up odometry broadcaster
         self.odomPub = self.node.create_publisher(Odometry, 'odom', 5)
-        self.odomBroadcaster = tf2_ros.TransformBroadcaster()
+        self.odomBroadcaster = tf2_ros.TransformBroadcaster(self.node)
 
         self.node.get_logger().info("Started base controller for a base of " + str(self.wheel_track) + "m wide with " + str(self.encoder_resolution) + " ticks per rev")
         self.node.get_logger().info("Publishing odometry data at: " + str(self.rate) + " Hz using " + str(self.base_frame) + " as base frame")
