@@ -1271,7 +1271,7 @@ class Stm32ROS(Node):
             self.show_statics = self.get_parameter('show_statics').get_parameter_value().bool_value
             self.encoder_min = self.get_parameter('encoder_min').get_parameter_value().integer_value
             self.encoder_max = self.get_parameter('encoder_max').get_parameter_value().integer_value
-            self.sonar_height = self.get_parameter('sonar_height').get_parameter_value().double_values
+            self.sonar_height = self.get_parameter('sonar_height').get_parameter_value().double_value
             self.sonar0_offset_yaw = self.get_parameter('sonar0_offset_yaw').get_parameter_value().double_value
             self.sonar0_offset_x = self.get_parameter('sonar0_offset_x').get_parameter_value().double_value
             self.sonar0_offset_y = self.get_parameter('sonar0_offset_y').get_parameter_value().double_value
