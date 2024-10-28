@@ -1142,6 +1142,7 @@ class BaseController:
 
             if (self.useImu == False) :
                 self.odomBroadcaster.sendTransform(t)
+                
             odom = Odometry()
             odom.header.frame_id = "odom"
             odom.child_frame_id = self.base_frame

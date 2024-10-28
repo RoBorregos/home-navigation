@@ -5,19 +5,18 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     config = os.path.join(
-      get_package_share_directory('my_package'),
+      get_package_share_directory('dashgo_driver'),
       'config',
-      'test.yaml'
+      'dashgo_parameters.yaml'
       )
     return LaunchDescription([
         Node(
-            package='my_package',
-            executable='dashgo_driver2',
+            package='dashgo_driver',
+            executable='dashgo_driver',
             name='DashgoDriver',
             output='screen',
             emulate_tty=True,
             parameters=[
-                # {'my_parameter': 'test'},
                 config
             ],
         ),

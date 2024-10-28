@@ -1,3 +1,0 @@
-DashgoDriver:
-  ros__parameters:
-    my_parameter: "value_test"
