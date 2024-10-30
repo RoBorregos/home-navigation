@@ -1,40 +1,14 @@
-FROM dustynv/ros:humble-ros-base-l4t-r32.7.1
+FROM dustynv/ros:humble-desktop-l4t-r32.7.1 
 
-# # Install dependencies.
-# RUN rm -rf /var/lib/apt/lists/partial && apt-get update -o Acquire::CompressionTypes::Order::=gz
-# #     && apt-get install -y  build-essential \
-# #     ffmpeg libsm6 libxext6 autoconf libtool mesa-utils \
-# #     terminator nano git wget curl iputils-ping \
-# #     libcanberra-gtk-module libcanberra-gtk3-module \
-# #     ros-dev-tools net-tools
-
-# RUN apt-get install -y build-essential \
-#     ffmpeg libsm6 libxext6 autoconf libtool mesa-utils \
-#     terminator nano git wget curl iputils-ping \
-#     libcanberra-gtk-module libcanberra-gtk3-module \
-#     ros-dev-tools net-tools
-
-# # Additional ROS tools
-# RUN apt install -y ros-noetic-teleop-twist-keyboard \
-#     ros-noetic-navigation
-
-# # Navigation packages
-# RUN apt install -y ros-noetic-serial ros-noetic-gmapping \
-#     ros-noetic-robot-localization ros-noetic-teb-local-planner \
-#     ros-noetic-fkie-multimaster ros-noetic-ira-laser-tools \
-#     ros-noetic-pointcloud-to-laserscan
-
-# Install python packages
-# RUN pip install pyserial
-
-# RUN echo "source /opt/ros/noetic/setup.bash" >> /home/ros/.bashrc
-# RUN echo "alias master='export ROS_MASTER_URI=http://192.168.31.23:11311'" >> /home/ros/.bashrc
-# RUN echo "alias master-nano='export ROS_MASTER_URI=http://192.168.31.123:11311'" >> /home/ros/.bashrc
-# RUN echo "alias rosip-nano='export ROS_IP=192.168.31.123'" >> /home/ros/.bashrc
-# RUN echo "alias rosip-xavier='export ROS_IP=192.168.31.23'" >> /home/ros/.bashrc
 ARG USERNAME=ros
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+
+
+#Install ros dependencies
+RUN cd /
+
+
 
 # Create a non-root user
 RUN groupadd --gid $USER_GID $USERNAME \
@@ -48,7 +22,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 
 # Set up autocompletion for user
 RUN apt-get update && apt-get install -y git-core bash-completion \
-  && echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc \
+  && echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/install/setup.bash; fi" >> /home/$USERNAME/.bashrc \
   && echo "if [ -f /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash ]; then source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash; fi" >> /home/$USERNAME/.bashrc \
   && rm -rf /var/lib/apt/lists/* 
 
