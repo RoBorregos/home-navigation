@@ -17,6 +17,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Twist
 import tf2_geometry_msgs
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from frida_navigation_interfaces.msg import navServAction, navServGoal, navServResult
+from frida_navigation_interfaces.srv import getLocations
 import tf2_ros
 from sklearn.linear_model import RANSACRegressor
 
@@ -80,8 +81,12 @@ class navigationServer(object):
 
         # Initialize Navigation Action Server
         self._as = actionlib.SimpleActionServer(self._action_name, navServAction, execute_cb=self.execute_cb, auto_start = False)
+        self.info_keeper = actionlib.SimpleActionServer("get_locations", getLocations, execute_cb=self.get_locations, auto_start=False)
         self._as.start()
     
+    def get_locations(self, goal):
+        rospy.loginfo("Getting locations")
+        self.info_keeper.set_succeeded(getLocations(locations=str(self.placesPoses)))
 
     def initPlaces(self):
         # create a dictionary of places and their poses using the json file which has the following format

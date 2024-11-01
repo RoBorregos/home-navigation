@@ -1,11 +1,11 @@
-#goal definition
-uint8 NAV_MODE = 0
-uint8 FORWARD = 1
-uint8 BACKWARD = 2
-uint8 DOOR_SIGNAL = 3
+# #goal definition
+# uint8 NAV_MODE = 0
+# uint8 FORWARD = 1
+# uint8 BACKWARD = 2
+# uint8 DOOR_SIGNAL = 3
 
-string target_location
-uint8 goal_type
+# string target_location
+# uint8 goal_type
 geometry_msgs/PoseStamped target_pose
 ---
 #result definition
