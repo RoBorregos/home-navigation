@@ -141,7 +141,13 @@ class navigationServer(object):
          
 
     def get_goal(self, target : str):
-        keys = target.split(" ")
+        print(f"quiere ir a : {target}")
+        if "living" in target:
+            keys = target.split(" ")
+            keys[0] = "living_room"
+            keys.pop(1)
+        print(keys)
+    
 
         if (len(keys) <= 1):
             if (keys[0] in self.placesPoses):
@@ -155,7 +161,8 @@ class navigationServer(object):
         elif (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
             rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]][keys[1]]}")
             return self.placesPoses[keys[0]][keys[1]]
-        
+        else:
+            return self.placesPoses[keys[0]]["safe_place"]
         rospy.loginfo("Invalid target")
         return None
 
