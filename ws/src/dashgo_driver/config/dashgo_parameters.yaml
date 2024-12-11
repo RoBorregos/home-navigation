@@ -7,7 +7,7 @@ DashgoDriver:
     sensorstate_rate: 10
 
     # === Robot Module activation
-    use_smotheer: True  # To use the smoother nodelet set use_smoother to True
+    use_smotheer: False  # To use the smoother nodelet set use_smoother to True
     useSonar: False
     useImu: True
     use_base_controller: True
