@@ -12,7 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 
 #Install directories
-install(DIRECTORY launch
+install(DIRECTORY launch urdf
   DESTINATION share/${PROJECT_NAME})
 
 
