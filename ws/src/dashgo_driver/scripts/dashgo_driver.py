@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from serial.serialutil import SerialException
 from serial import Serial
 import sys, traceback
