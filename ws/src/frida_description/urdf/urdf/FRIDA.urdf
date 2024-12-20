@@ -1,6 +1,3 @@
-<?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="FRIDA">
-
 <?xml version="1.0" encoding="utf-8"?>
 <!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
      Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
@@ -29,7 +26,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/base_link.STL" />
+          filename="package://frida_description/urdf/meshes/base_link.STL" />
       </geometry>
       <material
         name="">
@@ -43,7 +40,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/base_link.STL" />
+          filename="package://frida_description/urdf/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -69,7 +66,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/right_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/right_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -83,7 +80,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/right_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/right_wheel.STL" />
       </geometry>
     </collision>
   </link>
@@ -122,7 +119,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/left_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/left_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -136,7 +133,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/left_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/left_wheel.STL" />
       </geometry>
     </collision>
   </link>
@@ -175,7 +172,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/right_castwheel_bracket.STL" />
+          filename="package://frida_description/urdf/meshes/right_castwheel_bracket.STL" />
       </geometry>
       <material
         name="">
@@ -189,7 +186,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/right_castwheel_bracket.STL" />
+          filename="package://frida_description/urdf/meshes/right_castwheel_bracket.STL" />
       </geometry>
     </collision>
   </link>
@@ -228,7 +225,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/right_cast_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/right_cast_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -242,7 +239,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/right_cast_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/right_cast_wheel.STL" />
       </geometry>
     </collision>
   </link>
@@ -281,7 +278,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/left_castwheel_bracket.STL" />
+          filename="package://frida_description/urdf/meshes/left_castwheel_bracket.STL" />
       </geometry>
       <material
         name="">
@@ -295,7 +292,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/left_castwheel_bracket.STL" />
+          filename="package://frida_description/urdf/meshes/left_castwheel_bracket.STL" />
       </geometry>
     </collision>
   </link>
@@ -334,7 +331,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/left_cast_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/left_cast_wheel.STL" />
       </geometry>
       <material
         name="">
@@ -348,7 +345,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/left_cast_wheel.STL" />
+          filename="package://frida_description/urdf/meshes/left_cast_wheel.STL" />
       </geometry>
     </collision>
   </link>
@@ -365,6 +362,8 @@
     <axis
       xyz="-0.20327 0 -0.97912" />
   </joint>
+
+  <!-- LIDAR -->
   <link
     name="LIDAR">
     <inertial>
@@ -387,7 +386,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/LIDAR.STL" />
+          filename="package://frida_description/urdf/meshes/LIDAR.STL" />
       </geometry>
       <material
         name="">
@@ -401,7 +400,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/LIDAR.STL" />
+          filename="package://frida_description/urdf/meshes/LIDAR.STL" />
       </geometry>
     </collision>
   </link>
@@ -440,7 +439,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/intel_realsense.STL" />
+          filename="package://frida_description/urdf/meshes/intel_realsense.STL" />
       </geometry>
       <material
         name="">
@@ -454,7 +453,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/intel_realsense.STL" />
+          filename="package://frida_description/urdf/meshes/intel_realsense.STL" />
       </geometry>
     </collision>
   </link>
@@ -471,6 +470,8 @@
     <axis
       xyz="0 0 0" />
   </joint>
+
+  <!-- Xarm -->
   <link
     name="Xarm">
     <inertial>
@@ -493,7 +494,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/Xarm.STL" />
+          filename="package://frida_description/urdf/meshes/Xarm.STL" />
       </geometry>
       <material
         name="">
@@ -507,7 +508,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://FRIDAurdf/meshes/Xarm.STL" />
+          filename="package://frida_description/urdf/meshes/Xarm.STL" />
       </geometry>
     </collision>
   </link>
