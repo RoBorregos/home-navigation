@@ -10,7 +10,7 @@
   <!-- Base Link -->
   <link name="base_link">
     <inertial>
-      <origin xyz="-0.017897 -0.0059216 0.24057" rpy="0 0 0" />
+      <origin xyz="-0.017897 -0.0059216 0.12557" rpy="0 0 0" />
       <mass value="31.075" />
       <inertia ixx="0.67537" ixy="-0.00030935" ixz="-0.0025852"
                iyy="0.61552" iyz="-0.0003748" izz="0.65918" />
@@ -33,10 +33,10 @@
   </link>
 
   <!-- Wheels -->
-  <xacro:macro name="wheel_link" params="prefix inertial_origin ixy ixz iyz joint_origin">
+  <xacro:macro name="wheel_link" params="prefix ixy ixz iyz joint_origin">
     <link name="${prefix}_wheel">
       <inertial>
-        <origin xyz="${inertial_origin}" rpy="0 0 0" />
+        <origin xyz="-1.3878E-17 0 2.7756E-17" rpy="0 0 0" />
         <mass value="0.52892" />
         <inertia ixx="0.00063131" ixy="${ixy}" ixz="${ixz}"
                  iyy="0.00063131" iyz="${iyz}" izz="0.0011216" />
@@ -65,17 +65,17 @@
     </joint>
   </xacro:macro>
 
-  <xacro:wheel_link prefix="right" inertial_origin="1.3878E-17 2.7756E-17 0.039" ixy="-9.9049E-20" ixz="5.8265E-21" iyz="-2.2717E-21" joint_origin="-0.075244 -0.205 0.0375" />
-  <xacro:wheel_link prefix="left" inertial_origin="-2.7756E-17 0 -0.039" ixy="4.5051E-20" ixz="1.2238E-21" iyz="7.2483E-21" joint_origin="-0.075244 0.205 0.0375" />
+  <xacro:wheel_link prefix="right" ixy="-9.9049E-20" ixz="5.8265E-21" iyz="-2.2717E-21" joint_origin="-0.075244 -0.166 -0.0775" />
+  <xacro:wheel_link prefix="left" ixy="4.5051E-20" ixz="1.2238E-21" iyz="7.2483E-21" joint_origin="-0.075244 0.166 -0.0775" />
 
   <!-- Castor Wheels Brackets-->
   <xacro:macro name="castwheel_bracket" params="prefix inertial_origin ixy ixz iyz joint_origin">
     <link name="${prefix}_castwheel_bracket">
       <inertial>
-        <origin xyz="6.9389E-17 -1.3878E-17 -0.012445" rpy="0 0 0" />
+        <origin xyz="${inertial_origin}" rpy="0 0 0" />
         <mass value="0.045185" />
-        <inertia ixx="1.9146E-05" ixy="5.0711E-08" ixz="-1.5544E-21"
-                 iyy="2.036E-05" iyz="7.1304E-21" izz="1.5813E-05" />
+        <inertia ixx="1.9146E-05" ixy="${ixy}" ixz="${ixz}"
+                 iyy="2.036E-05" iyz="${iyz}" izz="1.5813E-05" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -94,24 +94,24 @@
       </collision>
     </link>
     <joint name="${prefix}castwheelbracket" type="continuous">
-      <origin xyz="${joint_origin}" rpy="0 0 0" />
+      <origin xyz="${joint_origin}" rpy="3.1416 0 0" />
       <parent link="base_link" />
       <child link="${prefix}_castwheel_bracket" />
-      <axis xyz="0 0 1" />
+      <axis xyz="0 0 -1" />
     </joint>
   </xacro:macro>
 
-  <xacro:castwheel_bracket prefix="right" inertial_origin="6.9389E-17 -1.3878E-17 -0.012445" ixy="5.0711E-08" ixz="-1.5544E-21" iyz="7.1304E-21" joint_origin="0.11226 -0.09 0.047" />
-  <xacro:castwheel_bracket prefix="left" inertial_origin="4.1633E-17 0 -0.012445" ixy="2.8215E-08" ixz="-8.1753E-21" iyz="1.5203E-20" joint_origin="0.11226 0.09 0.047" />
+  <xacro:castwheel_bracket prefix="right" inertial_origin="-6.9389E-17 -1.3878E-17 0.012445" ixy="-5.23501237066605E-21" ixz="1.02910979879346E-20" iyz="1.03781586309714E-20" joint_origin="0.11226 -0.09 -0.068" />
+  <xacro:castwheel_bracket prefix="left" inertial_origin="0 -4.1633E-17 0.012445" ixy="2.58235447481398E-21" ixz="-2.02138625848788E-21" iyz="-2.42344897559804E-22" joint_origin="0.11226 0.09 -0.068" />
 
   <!-- Castor Wheels -->
   <xacro:macro name="castwheel" params="prefix inertial_origin ixy ixz iyz">
     <link name="${prefix}_cast_wheel">
       <inertial>
-        <origin xyz="1.249E-16 2.9924E-17 8.3267E-17" rpy="0 0 0" />
+        <origin xyz="${inertial_origin}" rpy="0 0 0" />
         <mass value="0.069429" />
-        <inertia ixx="1.9537E-05" ixy="-2.1563E-23" ixz="5.1128E-07"
-                 iyy="1.9515E-05" iyz="2.0181E-22" izz="3.1777E-05" />
+        <inertia ixx="1.9537E-05" ixy="${ixy}" ixz="${ixz}"
+                 iyy="1.9515E-05" iyz="${iyz}" izz="3.1777E-05" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -130,22 +130,22 @@
       </collision>
     </link>
     <joint name="${prefix}castwheel" type="continuous">
-      <origin xyz="0 0 -0.044416320504547" rpy="-1.5707963267949 0 0" />
+      <origin xyz="0 0 0.044416" rpy="1.5708 0 0" />
       <parent link="${prefix}_castwheel_bracket" />
       <child link="${prefix}_cast_wheel" />
-      <axis xyz="0.0416605249430601 0 0.999131823465487" />
+      <axis xyz="0 0 1" />
     </joint>
   </xacro:macro>
 
-  <xacro:castwheel prefix="right" inertial_origin="1.249E-16 2.9924E-17 8.3267E-17" ixy="-2.1563E-23" ixz="5.1128E-07" iyz="2.0181E-22" />
-  <xacro:castwheel prefix="left" inertial_origin="1.1102E-16 2.472E-17 -1.1102E-16" ixy="2.8151E-21" ixz="2.8447E-07" iyz="4.59E-22" />
+  <xacro:castwheel prefix="right" inertial_origin="6.93889390390723E-17 4.16333634234434E-17 1.11022302462516E-16" ixy="2.0056E-21" ixz="1.5647E-227" iyz="2.0594E-22" />
+  <xacro:castwheel prefix="left" inertial_origin="5.5511E-17 1.9082E-17 -6.9389E-17" ixy="-4.5297E-22" ixz="1.137E-217" iyz="-3.028E-21" />
 
   <!-- LIDAR -->
   <link name="LIDAR">
     <inertial>
-      <origin xyz="-1.3878E-17 -3.3818E-34 0.0125" rpy="0 0 0" />
+      <origin xyz="-1.3878E-17 3.3818E-34 -0.0125" rpy="0 0 0" />
       <mass value="0.096211" />
-      <inertia ixx="3.4476E-05" ixy="1.3255E-52" ixz="-6.0099E-37"
+      <inertia ixx="3.4476E-05" ixy="-1.3255E-52" ixz="6.0099E-37"
                iyy="3.4476E-05" iyz="8.1342E-38" izz="5.8929E-05" />
     </inertial>
     <visual>
@@ -165,7 +165,7 @@
     </collision>
   </link>
   <joint name="lidar" type="fixed">
-    <origin xyz="0.15026 0 0.117" rpy="0 0 0" />
+    <origin xyz="0.15026 0 0.002" rpy="3.1416 0 0" />
     <parent link="base_link" />
     <child link="LIDAR" />
     <axis xyz="0 0 0" />
@@ -174,7 +174,7 @@
   <!-- RealSense Camera -->
   <link name="intel_realsense">
     <inertial>
-      <origin xyz="0.01217 -3.7238E-07 -4.8169E-05" rpy="0 0 0" />
+      <origin xyz="-0.00027987 -3.7238E-07 -4.8169E-05" rpy="0 0 0" />
       <mass value="0.048201" />
       <inertia ixx="2.7391E-05" ixy="-4.2599E-07" ixz="7.5493E-09"
                iyy="3.3506E-06" iyz="2.1161E-09" izz="2.6652E-05" />
@@ -196,7 +196,7 @@
     </collision>
   </link>
   <joint name="intelrealsense" type="fixed">
-    <origin xyz="0.06478 0 0.55626" rpy="0 0 0" />
+    <origin xyz="0.07723 0 0.44126" rpy="0 0 0" />
     <parent link="base_link" />
     <child link="intel_realsense" />
     <axis xyz="0 0 0" />
@@ -206,7 +206,7 @@
   <link name="Xarm">
   </link>
   <joint name="xarm" type="fixed">
-    <origin xyz="0.00497561281612351 0 0.455" rpy="0 0 1.57" />
+    <origin xyz="0.0049756 0 0.34" rpy="0 0 1.57" />
     <parent link="base_link" />
     <child link="Xarm" />
     <axis xyz="0 0 0" />
