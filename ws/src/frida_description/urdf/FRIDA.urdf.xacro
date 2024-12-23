@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="FRIDA" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<!-- Properties -->
+<xacro:property name="mesh_path" value="package://frida_description/urdf/meshes/" />
+<xacro:property name="material_rgba" value="0.792 0.820 0.933 1" />
+<xacro:property name="lidar_rgba" value="0.102 0.102 0.102 1" />
+<xacro:property name="intel_rgba" value="0.776 0.757 0.737 1" />
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.017897 -0.0059216 0.24057" rpy="0 0 0" />
+      <mass value="31.075" />
+      <inertia ixx="0.67537" ixy="-0.00030935" ixz="-0.0025852"
+               iyy="0.61552" iyz="-0.0003748" izz="0.65918" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="${mesh_path}base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="${material_rgba}" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="${mesh_path}base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Wheels -->
+  <xacro:macro name="wheel_link" params="prefix inertial_origin ixy ixz iyz joint_origin">
+    <link name="${prefix}_wheel">
+      <inertial>
+        <origin xyz="${inertial_origin}" rpy="0 0 0" />
+        <mass value="0.52892" />
+        <inertia ixx="0.00063131" ixy="${ixy}" ixz="${ixz}"
+                 iyy="0.00063131" iyz="${iyz}" izz="0.0011216" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_path}${prefix}_wheel.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="${lidar_rgba}" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_path}${prefix}_wheel.STL" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}wheel" type="continuous">
+      <origin xyz="${joint_origin}" rpy="-1.5708 0 0" />
+      <parent link="base_link" />
+      <child link="${prefix}_wheel" />
+      <axis xyz="0 0 1" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:wheel_link prefix="right" inertial_origin="1.3878E-17 2.7756E-17 0.039" ixy="-9.9049E-20" ixz="5.8265E-21" iyz="-2.2717E-21" joint_origin="-0.075244 -0.205 0.0375" />
+  <xacro:wheel_link prefix="left" inertial_origin="-2.7756E-17 0 -0.039" ixy="4.5051E-20" ixz="1.2238E-21" iyz="7.2483E-21" joint_origin="-0.075244 0.205 0.0375" />
+
+  <!-- Castor Wheels Brackets-->
+  <xacro:macro name="castwheel_bracket" params="prefix inertial_origin ixy ixz iyz joint_origin">
+    <link name="${prefix}_castwheel_bracket">
+      <inertial>
+        <origin xyz="6.9389E-17 -1.3878E-17 -0.012445" rpy="0 0 0" />
+        <mass value="0.045185" />
+        <inertia ixx="1.9146E-05" ixy="5.0711E-08" ixz="-1.5544E-21"
+                 iyy="2.036E-05" iyz="7.1304E-21" izz="1.5813E-05" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_path}${prefix}_castwheel_bracket.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="${intel_rgba}" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_path}${prefix}_castwheel_bracket.STL" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}castwheelbracket" type="continuous">
+      <origin xyz="${joint_origin}" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="${prefix}_castwheel_bracket" />
+      <axis xyz="0 0 1" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:castwheel_bracket prefix="right" inertial_origin="6.9389E-17 -1.3878E-17 -0.012445" ixy="5.0711E-08" ixz="-1.5544E-21" iyz="7.1304E-21" joint_origin="0.11226 -0.09 0.047" />
+  <xacro:castwheel_bracket prefix="left" inertial_origin="4.1633E-17 0 -0.012445" ixy="2.8215E-08" ixz="-8.1753E-21" iyz="1.5203E-20" joint_origin="0.11226 0.09 0.047" />
+
+  <!-- Castor Wheels -->
+  <xacro:macro name="castwheel" params="prefix inertial_origin ixy ixz iyz">
+    <link name="${prefix}_cast_wheel">
+      <inertial>
+        <origin xyz="1.249E-16 2.9924E-17 8.3267E-17" rpy="0 0 0" />
+        <mass value="0.069429" />
+        <inertia ixx="1.9537E-05" ixy="-2.1563E-23" ixz="5.1128E-07"
+                 iyy="1.9515E-05" iyz="2.0181E-22" izz="3.1777E-05" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_path}${prefix}_cast_wheel.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="${lidar_rgba}" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_path}${prefix}_cast_wheel.STL" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}castwheel" type="continuous">
+      <origin xyz="0 0 -0.044416320504547" rpy="-1.5707963267949 0 0" />
+      <parent link="${prefix}_castwheel_bracket" />
+      <child link="${prefix}_cast_wheel" />
+      <axis xyz="0.0416605249430601 0 0.999131823465487" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:castwheel prefix="right" inertial_origin="1.249E-16 2.9924E-17 8.3267E-17" ixy="-2.1563E-23" ixz="5.1128E-07" iyz="2.0181E-22" />
+  <xacro:castwheel prefix="left" inertial_origin="1.1102E-16 2.472E-17 -1.1102E-16" ixy="2.8151E-21" ixz="2.8447E-07" iyz="4.59E-22" />
+
+  <!-- LIDAR -->
+  <link name="LIDAR">
+    <inertial>
+      <origin xyz="-1.3878E-17 -3.3818E-34 0.0125" rpy="0 0 0" />
+      <mass value="0.096211" />
+      <inertia ixx="3.4476E-05" ixy="1.3255E-52" ixz="-6.0099E-37"
+               iyy="3.4476E-05" iyz="8.1342E-38" izz="5.8929E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="${mesh_path}LIDAR.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="${lidar_rgba}" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="${mesh_path}LIDAR.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="lidar" type="fixed">
+    <origin xyz="0.15026 0 0.117" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="LIDAR" />
+    <axis xyz="0 0 0" />
+  </joint>
+
+  <!-- RealSense Camera -->
+  <link name="intel_realsense">
+    <inertial>
+      <origin xyz="0.01217 -3.7238E-07 -4.8169E-05" rpy="0 0 0" />
+      <mass value="0.048201" />
+      <inertia ixx="2.7391E-05" ixy="-4.2599E-07" ixz="7.5493E-09"
+               iyy="3.3506E-06" iyz="2.1161E-09" izz="2.6652E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="${mesh_path}intel_realsense.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="${intel_rgba}" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="${mesh_path}intel_realsense.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="intelrealsense" type="fixed">
+    <origin xyz="0.06478 0 0.55626" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="intel_realsense" />
+    <axis xyz="0 0 0" />
+  </joint>
+
+  <!-- Xarm -->
+  <link name="Xarm">
+  </link>
+  <joint name="xarm" type="fixed">
+    <origin xyz="0.00497561281612351 0 0.455" rpy="0 0 1.57" />
+    <parent link="base_link" />
+    <child link="Xarm" />
+    <axis xyz="0 0 0" />
+  </joint>
+
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="add_gripper" default="false" />
+  <xacro:arg name="add_vacuum_gripper" default="false" />
+  <xacro:arg name="robot_type" default="xarm" />
+  <xacro:arg name="model1300" default="false" />
+  <xacro:arg name="add_realsense_d435i" default="false" />
+  <xacro:arg name="add_d435i_links" default="false" />
+  <xacro:arg name="robot_sn" default="" />
+
+  <xacro:arg name="dof" default="6" />
+  
+  <xacro:include filename="$(find xarm_description)/urdf/xarm_device_macro.xacro" />
+  <xacro:xarm_device prefix="$(arg prefix)" dof="$(arg dof)" attach_to="Xarm" model1300="$(arg model1300)" add_gripper="$(arg add_gripper)" add_vacuum_gripper="$(arg add_vacuum_gripper)" add_realsense_d435i="$(arg add_realsense_d435i)" add_d435i_links="$(arg add_d435i_links)" robot_sn="$(arg robot_sn)" />
+
+  <!-- Gripper
+  <xacro:include filename="$(find robot_description)/urdf/gripper/gripper.urdf.xacro" />
+  <xacro:include filename="$(find robot_description)/urdf/gripper/gripperP.urdf.xacro" />
+  <xacro:include filename="$(find robot_description)/urdf/gripper/gripperFakeSF.urdf.xacro" />
+  <xacro:include filename="$(find robot_description)/urdf/gripper/gripperSF.urdf.xacro" />
+  
+  <xacro:load_gripperSF attach_to="$(arg prefix)link_eef" xyz="0 0 0.007" rpy="-1.57 0 2.3554" />
+  <xacro:include filename="$(find robot_description)/urdf/camera.urdf.xacro" />
+  <xacro:load_camera name="Cam1" attach_to="Base_Gripper" x="0.068098" y="-0.035446" z="0.0" r_p="-0.785398" r_r="1.5707" r_y="0.0" />
+  -->
+
+</robot>
