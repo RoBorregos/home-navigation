@@ -16,12 +16,12 @@ base_local_planner: "teb_local_planner/TebLocalPlannerROS"  # The base local pla
 max_planning_retries: 1  # The maximum number of planning retries in case of failures.
 
 recovery_behavior_enabled: true  # Flag indicating whether recovery behaviors are enabled.
-clearing_rotation_allowed: true  # Flag indicating whether clearing rotation is allowed.
+clearing_rotation_allowed: false  # Flag indicating whether clearing rotation is allowed.
 
 useMagnetometer: false  # Flag indicating whether to use a magnetometer for navigation.
 auto_update_: false  # Flag indicating whether to automatically update parameters.
 particle_range: 1.0  # The range (in meters) of particles used for localization.
-angle_tolerance: 0.15  # The angle tolerance (in radians) for navigation goals.
+angle_tolerance: 0.25 # The angle tolerance (in radians) for navigation goals.
 
 recovery_behaviors:  # Configuration of recovery behaviors.
   # - name: 'conservative_reset'
@@ -30,8 +30,8 @@ recovery_behaviors:  # Configuration of recovery behaviors.
     type: 'clear_costmap_recovery/ClearCostmapRecovery'
   # - name: 'super_reset'
     # type: 'clear_costmap_recovery/ClearCostmapRecovery'
-  - name: 'clearing_rotation'
-    type: 'rotate_recovery/RotateRecovery'
+  #- name: 'clearing_rotation'
+  #  type: 'rotate_recovery/RotateRecovery'
   # - name: 'move_slow_and_clear'
     # type: 'move_slow_and_clear/MoveSlowAndClear'
 
@@ -51,7 +51,7 @@ super_reset:  # Configuration for the clearing rotation recovery behavior.
   layer_names: [obstacle_layer]  # The names of the layers to reset.
 
 move_slow_and_clear:  # Configuration for the move slow and clear recovery behavior.
-  clearing_distance: 0.5  # The distance (in meters) to clear the costmap.
+  clearing_distance: 0.3  # The distance (in meters) to clear the costmap.
   limited_trans_speed: 0.1  # The limited translational speed (in m/s) for moving slowly.
   limited_rot_speed: 0.4  # The limited rotational speed (in rad/s) for moving slowly.
   limited_distance: 0.3  # The limited distance (in meters) for moving slowly.

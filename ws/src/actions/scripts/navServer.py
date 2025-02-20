@@ -17,6 +17,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Twist
 import tf2_geometry_msgs
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from frida_navigation_interfaces.msg import navServAction, navServGoal, navServResult
+from frida_navigation_interfaces.srv import getLocations
 import tf2_ros
 from sklearn.linear_model import RANSACRegressor
 
@@ -80,8 +81,12 @@ class navigationServer(object):
 
         # Initialize Navigation Action Server
         self._as = actionlib.SimpleActionServer(self._action_name, navServAction, execute_cb=self.execute_cb, auto_start = False)
+        self.info_keeper = actionlib.SimpleActionServer("get_locations", getLocations, execute_cb=self.get_locations, auto_start=False)
         self._as.start()
     
+    def get_locations(self, goal):
+        rospy.loginfo("Getting locations")
+        self.info_keeper.set_succeeded(getLocations(locations=str(self.placesPoses)))
 
     def initPlaces(self):
         # create a dictionary of places and their poses using the json file which has the following format
@@ -109,10 +114,9 @@ class navigationServer(object):
     def execute_cb(self, goal):
         rospy.loginfo("[INFO] Executing goal")
         target = str(goal.target_location)
-        goal_type = goal.goal_type
         goal_pose = self.get_goal(target) if target != "" else goal.target_pose
         cmd_vel = Twist()
-        if (goal_type == goal.NAV_MODE):
+        if (True):
             if goal_pose is None:
                 rospy.loginfo("[ERROR] Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
@@ -120,7 +124,7 @@ class navigationServer(object):
             self.send_goal(goal_pose)
             rospy.loginfo("[INFO] Robot Moving Towards " + target if target != "" else goal.target_pose)
             self._as.set_succeeded(navServResult(result=True))
-        elif (goal_type == goal.FORWARD):
+        elif (False):
             if goal_pose is None:
                 rospy.loginfo("[ERROR] Invalid target")
                 self._as.set_succeeded(navServResult(result=False))
@@ -128,11 +132,11 @@ class navigationServer(object):
             self.move_forward(cmd_vel, goal_pose)
             rospy.loginfo("[INFO] Robot approached " + target)
             self._as.set_succeeded(navServResult(result=self.success))
-        elif (goal_type == goal.BACKWARD):
+        elif (False):
             self.move_backward(cmd_vel)
             rospy.loginfo("[INFO] Robot moved backward")
             self._as.set_succeeded(navServResult(result=self.success))
-        elif (goal_type == goal.DOOR_SIGNAL):
+        elif (False):
             self.door_signal()
             rospy.loginfo("[INFO] Detected door signal")
             self._as.set_succeeded(navServResult(result=self.success))
@@ -142,7 +146,13 @@ class navigationServer(object):
          
 
     def get_goal(self, target : str):
-        keys = target.split(" ")
+        print(f"quiere ir a : {target}")
+        if "living" in target:
+            keys = target.split(" ")
+            keys[0] = "living_room"
+            keys.pop(1)
+        print(keys)
+    
 
         if (len(keys) <= 1):
             if (keys[0] in self.placesPoses):
@@ -156,7 +166,8 @@ class navigationServer(object):
         elif (len(keys) <= 2 and keys[0] in self.placesPoses and keys[1] in self.placesPoses[keys[0]]):
             rospy.loginfo(f"Robot Moving Towards Safe Place POSE: {self.placesPoses[keys[0]][keys[1]]}")
             return self.placesPoses[keys[0]][keys[1]]
-        
+        else:
+            return self.placesPoses[keys[0]]["safe_place"]
         rospy.loginfo("Invalid target")
         return None
 

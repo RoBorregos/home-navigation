@@ -25,7 +25,7 @@ TebLocalPlannerROS:
 
  # GoalTolerance
  xy_goal_tolerance: 0.1  # (default: 0.2) The tolerance (in meters) for the goal position.
- yaw_goal_tolerance: 0.1  # (default: 0.2) The tolerance (in radians) for the goal orientation.
+ yaw_goal_tolerance: 0.25  # (default: 0.2) The tolerance (in radians) for the goal orientation.
  free_goal_vel: False  # (default: false) Flag indicating whether the goal velocity is unconstrained.
 
  # Obstacles

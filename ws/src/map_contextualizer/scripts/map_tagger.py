@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     if(x==1):
         print("Choose a map:")
-        maps = [f for f in listdir(BASE_PATH + "navigation/map_contextualizer/contextmaps") ]
+        maps = [f for f in listdir(BASE_PATH + "src/map_contextualizer/contextmaps") ]
         x = -1
         while x < 0 or x >= len(maps):
             for index, context_map in enumerate(maps):
@@ -132,7 +132,8 @@ if __name__ == '__main__':
         if x==0 or x>len(maps): exit(0)
 
         context_map = None
-        with open(BASE_PATH + "navigation/map_contextualizer/contextmaps/" + maps[x-1], "r") as read_file:
+        print(maps[x-1])
+        with open(BASE_PATH + "src/map_contextualizer/contextmaps/" + maps[x-1], "r") as read_file:
             context_map = json.load(read_file)
 
         map.name = context_map["name"]

@@ -67,7 +67,7 @@ class Stm32:
 
 
     
-    def __init__(self, port="/dev/ttyUSB0", baudrate=115200, timeout=0.5):
+    def __init__(self, port="/dev/port", baudrate=115200, timeout=0.5):
         self.PID_RATE = 30 # Do not change this!  It is a fixed property of the Stm32 PID controller.
         self.PID_INTERVAL = 1000 / 30
         

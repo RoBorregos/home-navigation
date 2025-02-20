@@ -243,7 +243,7 @@ class HumanPositionGetter:
         # pose.pose.position.x *= safe_distance_multiplier
         # pose.pose.position.y *= safe_distance_multiplier
 
-        pose.pose.position.x = person_pose_base.pose.position.x - 0.5
+        pose.pose.position.x = person_pose_base.pose.position.x - 0.25
         pose.pose.position.y = person_pose_base.pose.position.y
         pose.pose.position.z = person_pose_base.pose.position.z
         pose.pose.orientation.x = quat[0]
@@ -255,9 +255,9 @@ class HumanPositionGetter:
         distance_to_person = np.sqrt(
             (pose.pose.position.x) ** 2 + (pose.pose.position.y) ** 2
         )
-        if distance_to_person < 0.4 or distance_to_person > 4:
-            print("Person too close or too far")
-            return
+        # if distance_to_person < 0.1 or distance_to_person > 4.5:
+        #     print("Person too close or too far")
+        #     return
         
         try:
             person_pose_map = self.tf_buffer.transform(pose, "map", rospy.Duration(1))
@@ -296,7 +296,7 @@ class HumanPositionGetter:
         goal.target_pose = pose
         self.move_client.send_goal(goal)
 
-        self.move_client.wait_for_result(rospy.Duration(3))
+        self.move_client.wait_for_result(rospy.Duration(1))
         self.executing_goal = False
 
 

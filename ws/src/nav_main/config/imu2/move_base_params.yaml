@@ -16,7 +16,7 @@ base_local_planner: "teb_local_planner/TebLocalPlannerROS"
 max_planning_retries: 1
 
 recovery_behavior_enabled: true
-clearing_rotation_allowed: true
+clearing_rotation_allowed: false
 
 useMagnetometer: false
 auto_update_: false
@@ -24,14 +24,14 @@ particle_range: 1.0
 angle_tolerance: 0.15
 
 recovery_behaviors:
- #- name: 'conservative_reset'
-  #  type: 'clear_costmap_recovery/ClearCostmapRecovery'
-  - name: 'aggressive_reset'
+ - name: 'conservative_reset'
     type: 'clear_costmap_recovery/ClearCostmapRecovery'
+ # - name: 'aggressive_reset'
+ #   type: 'clear_costmap_recovery/ClearCostmapRecovery'
   #- name: 'super_reset'
    # type: 'clear_costmap_recovery/ClearCostmapRecovery'
-  - name: 'clearing_rotation'
-    type: 'rotate_recovery/RotateRecovery'
+  #- name: 'clearing_rotation'
+  #  type: 'rotate_recovery/RotateRecovery'
   #- name: 'move_slow_and_clear'
     #type: 'move_slow_and_clear/MoveSlowAndClear'
     

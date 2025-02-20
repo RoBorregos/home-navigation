@@ -1,6 +1,6 @@
 controller_frequency: 3.0  # Sets the frequency of the controller. (Default: 3.0)
 recovery_behavior_enabled: true  # Enables recovery behavior when the trajectory planner fails. (Default: true)
-clearing_rotation_allowed: true  # Allows rotation for obstacle clearing. (Default: true)
+clearing_rotation_allowed: false  # Allows rotation for obstacle clearing. (Default: true)
 
 TrajectoryPlannerROS:  # Configuration for the TrajectoryPlannerROS module.
    max_vel_x: 0.15  # Maximum linear velocity in the x-axis. (Default: 0.25)
